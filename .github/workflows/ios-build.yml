@@ -48,6 +48,26 @@ jobs:
           cp StockAI-ios-simulator.zip ../../../StockAI-ios-simulator.zip
           ls -la ../../../StockAI-ios-simulator.zip
 
+      - name: Smoke test on iOS Simulator
+        continue-on-error: true
+        run: |
+          set +e
+          echo "=== 可用模拟器 ==="
+          xcrun simctl list devices available | grep -E "iPhone" | head -8
+          DEVICE_ID=$(xcrun simctl list devices available | grep -E "iPhone" | grep -oE "\([0-9A-F-]{36}\)" | head -1 | tr -d '()')
+          if [ -z "$DEVICE_ID" ]; then echo "NO_SIMULATOR"; exit 0; fi
+          echo "DEVICE_ID=$DEVICE_ID"
+          xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b 2>&1 | tail -2
+          xcrun simctl install booted iosApp/build/Debug-iphonesimulator/StockAI.app && echo "INSTALL_OK"
+          echo "=== 启动 App ==="
+          xcrun simctl launch booted com.dsa.stockai && echo "LAUNCH_RETURNED"
+          sleep 12
+          echo "=== 进程存活检查 ==="
+          xcrun simctl spawn booted launchctl list | grep -i stockai && echo "APP_ALIVE" || echo "APP_CRASHED_OR_NOT_RUNNING"
+          echo "=== StockAI 相关日志 ==="
+          xcrun simctl spawn booted log show --last 4m --predicate 'processImagePath CONTAINS "StockAI" OR eventMessage CONTAINS "StockAI-Crash" OR eventMessage CONTAINS "StockAI-InitError"' --style compact 2>/dev/null | tail -80 || true
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
