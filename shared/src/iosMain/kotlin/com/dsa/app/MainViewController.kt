@@ -1,5 +1,6 @@
 package com.dsa.app
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.ComposeUIViewController
 import com.dsa.app.ui.SharedViewModel
@@ -17,10 +18,19 @@ fun MainViewController(): UIViewController {
     setUnhandledExceptionHook { e ->
         NSLog("[StockAI-Crash] %@", e.message ?: e.toString())
     }
+    NSLog("[StockAI-MARK] enter MainViewController")
     return try {
+        NSLog("[StockAI-MARK] creating ComposeUIViewController")
         ComposeUIViewController {
+            NSLog("[StockAI-MARK] compose content starts")
             val vm = remember { SharedViewModel() }
+            NSLog("[StockAI-MARK] viewmodel created")
+            LaunchedEffect(Unit) {
+                NSLog("[StockAI-MARK] first frame launched, app is rendering")
+            }
             App(vm)
+        }.also {
+            NSLog("[StockAI-MARK] controller created, returning to Swift")
         }
     } catch (e: Throwable) {
         NSLog("[StockAI-InitError] %@", e.toString())

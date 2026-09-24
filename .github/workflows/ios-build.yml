@@ -71,11 +71,17 @@ jobs:
           sleep 15
           kill $CPID 2>/dev/null || true
           echo "=== App 控制台输出 ==="
-          cat /tmp/app_out.txt | tail -100
+          cat /tmp/app_out.txt | tail -150
           echo "=== 进程存活检查 ==="
           xcrun simctl spawn booted launchctl list | grep -i stockai && echo "APP_ALIVE" || echo "APP_CRASHED_OR_NOT_RUNNING"
+          echo "=== CrashReporter 目录 ==="
+          ls -lt ~/Library/Logs/CrashReporter/ 2>/dev/null | grep -i stockai | head -3
+          CR2=$(ls -t ~/Library/Logs/CrashReporter/StockAI*.crash 2>/dev/null | head -1)
+          if [ -n "$CR2" ]; then echo "CR2_FILE=$CR2"; head -80 "$CR2"; fi
           echo "=== StockAI 相关日志 ==="
-          xcrun simctl spawn booted log show --last 4m --predicate 'processImagePath CONTAINS "StockAI" OR eventMessage CONTAINS "StockAI-Crash" OR eventMessage CONTAINS "StockAI-InitError"' --style compact 2>/dev/null | tail -80 || true
+          xcrun simctl spawn booted log show --last 4m --predicate 'processImagePath CONTAINS "StockAI" OR eventMessage CONTAINS "StockAI-Crash" OR eventMessage CONTAINS "StockAI-InitError" OR eventMessage CONTAINS "StockAI-MARK"' --style compact 2>/dev/null | tail -100 || true
+          echo "=== Crash 事件日志 ==="
+          xcrun simctl spawn booted log show --last 4m --predicate 'eventMessage CONTAINS "com.dsa.stockai" AND (eventType == error OR eventMessage CONTAINS "SIGABRT" OR eventMessage CONTAINS "SIGSEGV" OR eventMessage CONTAINS "EXC_BAD" OR eventMessage CONTAINS "crash")' --style compact 2>/dev/null | tail -40 || true
           echo "=== Crash Reports (.ips) ==="
           ls -lt ~/Library/Logs/DiagnosticReports/ 2>/dev/null | grep -i stockai | head -3
           CRASH=$(ls -t ~/Library/Logs/DiagnosticReports/StockAI*.ips 2>/dev/null | head -1)
