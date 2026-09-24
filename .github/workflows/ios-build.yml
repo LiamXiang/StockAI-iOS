@@ -28,34 +28,23 @@ jobs:
       - name: Build iOS Simulator Framework (KMP)
         run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode Project
-        run: |
-          cd iosApp
-          xcodegen generate
-          cd ..
-
       - name: Build iOS App (Simulator, no signing)
         run: |
-          cd iosApp
           xcodebuild \
-            -project StockAI.xcodeproj \
-            -scheme iosApp \
+            -project iosApp/StockAI.xcodeproj \
+            -target iosApp \
             -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
-          cd ..
 
       - name: Package App
         run: |
           cd iosApp/build/Debug-iphonesimulator
           zip -r StockAI-ios-simulator.zip StockAI.app
-          cd ../../..
+          cd ../..
           cp iosApp/build/Debug-iphonesimulator/StockAI-ios-simulator.zip ./StockAI-ios-simulator.zip
           ls -la
 
@@ -84,28 +73,17 @@ jobs:
       - name: Build iOS Device Framework (KMP, arm64)
         run: ./gradlew :shared:linkDebugFrameworkIosArm64 --no-daemon
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode Project (device framework path)
-        run: |
-          cd iosApp
-          sed -i '' 's|iosSimulatorArm64/debugFramework|iosArm64/debugFramework|g' project.yml
-          xcodegen generate
-          cd ..
-
       - name: Build iOS App (Device, unsigned ipa)
         run: |
-          cd iosApp
           xcodebuild \
-            -project StockAI.xcodeproj \
-            -scheme iosApp \
+            -project iosApp/StockAI.xcodeproj \
+            -target iosApp \
             -configuration Debug \
             -sdk iphoneos \
+            FRAMEWORK_SEARCH_PATHS='$(SRCROOT)/../shared/build/bin/iosArm64/debugFramework' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
-          cd ..
 
       - name: Package unsigned ipa
         run: |
