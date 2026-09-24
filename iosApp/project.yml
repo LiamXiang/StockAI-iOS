@@ -1,0 +1,37 @@
+name: StockAI
+options:
+  bundleIdPrefix: com.dsa
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGN_IDENTITY: ""
+    CODE_SIGNING_REQUIRED: "NO"
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - iosApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dsa.stockai
+        INFOPLIST_FILE: iosApp/Info.plist
+        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../shared/build/bin/iosSimulatorArm64/debugFramework"
+        OTHER_LDFLAGS: "$(inherited) -framework ComposeApp"
+        ENABLE_BITCODE: NO
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - framework: ../shared/build/bin/iosSimulatorArm64/debugFramework/ComposeApp.framework
+        embed: true
+schemes:
+  iosApp:
+    build:
+      targets:
+        iosApp: all
+    run:
+      config: Debug

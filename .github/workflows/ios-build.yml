@@ -1,0 +1,123 @@
+name: iOS Build (KMP)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build iOS Simulator Framework (KMP)
+        run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: |
+          cd iosApp
+          xcodegen generate
+          cd ..
+
+      - name: Build iOS App (Simulator, no signing)
+        run: |
+          cd iosApp
+          xcodebuild \
+            -project StockAI.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+          cd ..
+
+      - name: Package App
+        run: |
+          cd iosApp/build/Debug-iphonesimulator
+          zip -r StockAI-ios-simulator.zip StockAI.app
+          cd ../../..
+          cp iosApp/build/Debug-iphonesimulator/StockAI-ios-simulator.zip ./StockAI-ios-simulator.zip
+          ls -la
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StockAI-iOS-Simulator
+          path: StockAI-ios-simulator.zip
+          if-no-files-found: error
+
+  build-device:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build iOS Device Framework (KMP, arm64)
+        run: ./gradlew :shared:linkDebugFrameworkIosArm64 --no-daemon
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project (device framework path)
+        run: |
+          cd iosApp
+          sed -i '' 's|iosSimulatorArm64/debugFramework|iosArm64/debugFramework|g' project.yml
+          xcodegen generate
+          cd ..
+
+      - name: Build iOS App (Device, unsigned ipa)
+        run: |
+          cd iosApp
+          xcodebuild \
+            -project StockAI.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+          cd ..
+
+      - name: Package unsigned ipa
+        run: |
+          mkdir -p Payload
+          cp -r iosApp/build/Debug-iphoneos/StockAI.app Payload/
+          zip -r StockAI-unsigned.ipa Payload
+          rm -rf Payload
+          ls -la StockAI-unsigned.ipa
+
+      - name: Upload Artifact (unsigned ipa)
+        uses: actions/upload-artifact@v4
+        with:
+          name: StockAI-Untagged-IPA
+          path: StockAI-unsigned.ipa
+          if-no-files-found: error
