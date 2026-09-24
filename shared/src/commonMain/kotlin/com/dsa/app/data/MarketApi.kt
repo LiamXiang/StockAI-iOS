@@ -36,7 +36,7 @@ object MarketApi {
     }
 
     /** 批量获取实时行情 */
-    suspend fun fetchQuotes(codes: List<String>): List<Quote> = withContext(Dispatchers.IO) {
+    suspend fun fetchQuotes(codes: List<String>): List<Quote> = withContext(Dispatchers.Default) {
         if (codes.isEmpty()) return@withContext emptyList()
         val params = codes.joinToString(",") { toTencentCode(it) }
         val url = "https://qt.gtimg.cn/q=$params"
@@ -78,7 +78,7 @@ object MarketApi {
     }
 
     /** 获取 K 线（新浪） */
-    suspend fun fetchKline(code: String, period: String, datalen: Int = 320): List<KlinePoint> = withContext(Dispatchers.IO) {
+    suspend fun fetchKline(code: String, period: String, datalen: Int = 320): List<KlinePoint> = withContext(Dispatchers.Default) {
         val tc = toTencentCode(code)
         val scale = sinaScale(period)
         val url = "https://quotes.sina.cn/cn/api/jsonp_v2.php/var%20_=/CN_MarketDataService.getKLineData?symbol=$tc&scale=$scale&ma=no&datalen=$datalen"
@@ -111,7 +111,7 @@ object MarketApi {
     }
 
     /** 股票搜索（腾讯 smartbox） */
-    suspend fun searchStocks(keyword: String): List<StockSuggestion> = withContext(Dispatchers.IO) {
+    suspend fun searchStocks(keyword: String): List<StockSuggestion> = withContext(Dispatchers.Default) {
         if (keyword.isBlank()) return@withContext emptyList()
         val url = "https://smartbox.gtimg.cn/s3/?q=${encodeUrl(keyword)}&t=all"
         val resp = client.get(url) { header("User-Agent", UA) }

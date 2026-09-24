@@ -1,5 +1,7 @@
 package com.dsa.app.analysis
 
+import com.dsa.app.util.Fmt
+
 import com.dsa.app.data.IndicatorResult
 import com.dsa.app.data.KlinePoint
 import kotlin.math.abs
@@ -109,7 +111,7 @@ object Indicators {
                 val diff = closes[t] - mid[i]
                 variance += diff * diff
             }
-            val std = Math.sqrt(variance / period)
+            val std = kotlin.math.sqrt(variance / period)
             upper[i] = mid[i] + k * std
             lower[i] = mid[i] - k * std
         }
@@ -366,18 +368,18 @@ object Indicators {
         val last = kline.last()
         val prev = if (kline.size >= 2) kline[kline.size - 2] else null
         val sb = StringBuilder()
-        sb.append("最新收盘: %.2f".format(last.close))
+        sb.append("最新收盘: " + Fmt.d(last.close))
         if (prev != null) {
-            sb.append("（前日 %.2f，%+.2f%%）".format(prev.close, (last.close - prev.close) / prev.close * 100))
+            sb.append("（前日 " + Fmt.d(prev.close) + "，" + Fmt.s((last.close - prev.close) / prev.close * 100) + "%）")
         }
         sb.append("\n")
-        fun fmt(v: Double?) = if (v == null || v.isNaN()) "—" else "%.2f".format(v)
-        fun fmtInt(v: Double?) = if (v == null || v.isNaN()) "—" else "%.1f".format(v)
+        fun fmt(v: Double?) = if (v == null || v.isNaN()) "—" else Fmt.d(v)
+        fun fmtInt(v: Double?) = if (v == null || v.isNaN()) "—" else Fmt.d(v, 1)
         val n = kline.size - 1
         val ma5 = ind.ma5?.get(n) ?: Double.NaN
         val ma10 = ind.ma10?.get(n) ?: Double.NaN
         val ma20 = ind.ma20?.get(n) ?: Double.NaN
-        sb.append("MA5=%s MA10=%s MA20=%s".format(fmt(ma5), fmt(ma10), fmt(ma20)))
+        sb.append("MA5=" + fmt(ma5) + " MA10=" + fmt(ma10) + " MA20=" + fmt(ma20))
         if (!ma5.isNaN() && !ma10.isNaN() && !ma20.isNaN()) {
             if (ma5 > ma10 && ma10 > ma20) sb.append("（多头排列）")
             else if (ma5 < ma10 && ma10 < ma20) sb.append("（空头排列）")
@@ -387,7 +389,7 @@ object Indicators {
         val dif = ind.dif?.get(n) ?: Double.NaN
         val dea = ind.dea?.get(n) ?: Double.NaN
         val macd = ind.macd?.get(n) ?: Double.NaN
-        sb.append("MACD: DIF=%s DEA=%s 柱=%s".format(fmt(dif), fmt(dea), fmt(macd)))
+        sb.append("MACD: DIF=" + fmt(dif) + " DEA=" + fmt(dea) + " 柱=" + fmt(macd))
         if (!dif.isNaN() && !dea.isNaN()) {
             if (dif > dea && dif > 0) sb.append("（零上金叉，多头）")
             else if (dif > dea && dif < 0) sb.append("（零下金叉，反弹）")
@@ -398,7 +400,7 @@ object Indicators {
         val k = ind.k?.get(n) ?: Double.NaN
         val d = ind.d?.get(n) ?: Double.NaN
         val j = ind.j?.get(n) ?: Double.NaN
-        sb.append("KDJ: K=%s D=%s J=%s".format(fmtInt(k), fmtInt(d), fmtInt(j)))
+        sb.append("KDJ: K=" + fmtInt(k) + " D=" + fmtInt(d) + " J=" + fmtInt(j))
         if (!k.isNaN() && !d.isNaN()) {
             if (k > 80 && d > 80) sb.append("（超买区）")
             else if (k < 20 && d < 20) sb.append("（超卖区）")
@@ -407,7 +409,7 @@ object Indicators {
         }
         sb.append("\n")
         val rsi6 = ind.rsi6?.get(n) ?: Double.NaN
-        sb.append("RSI: RSI6=%s RSI12=%s RSI24=%s".format(fmtInt(ind.rsi6?.get(n)), fmtInt(ind.rsi12?.get(n)), fmtInt(ind.rsi24?.get(n))))
+        sb.append("RSI: RSI6=" + fmtInt(ind.rsi6?.get(n)) + " RSI12=" + fmtInt(ind.rsi12?.get(n)) + " RSI24=" + fmtInt(ind.rsi24?.get(n)))
         if (!rsi6.isNaN()) {
             if (rsi6 > 70) sb.append("（超买）")
             else if (rsi6 < 30) sb.append("（超卖）")
@@ -416,7 +418,7 @@ object Indicators {
         val bollUp = ind.bollUp?.get(n) ?: Double.NaN
         val bollMid = ind.bollMid?.get(n) ?: Double.NaN
         val bollLow = ind.bollLow?.get(n) ?: Double.NaN
-        sb.append("BOLL: 上轨=%s 中轨=%s 下轨=%s".format(fmt(bollUp), fmt(bollMid), fmt(bollLow)))
+        sb.append("BOLL: 上轨=" + fmt(bollUp) + " 中轨=" + fmt(bollMid) + " 下轨=" + fmt(bollLow))
         if (!bollUp.isNaN() && !bollLow.isNaN() && last.close > 0) {
             if (last.close >= bollUp) sb.append("（触及上轨，强压力）")
             else if (last.close <= bollLow) sb.append("（触及下轨，强支撑）")
@@ -428,7 +430,7 @@ object Indicators {
             val vol5 = kline.takeLast(5).map { it.volume }.average()
             val vol20 = kline.takeLast(20).map { it.volume }.average()
             val volRatio = if (vol20 > 0) vol5 / vol20 else 1.0
-            sb.append("量能: 5日均量%.0f手，20日均量%.0f手，量比%.2f".format(vol5, vol20, volRatio))
+            sb.append("量能: 5日均量" + Fmt.d(vol5, 0) + "手，20日均量" + Fmt.d(vol20, 0) + "手，量比" + Fmt.d(volRatio))
             if (volRatio > 1.5) sb.append("（明显放量）")
             else if (volRatio < 0.7) sb.append("（明显缩量）")
             else sb.append("（量能平稳）")
@@ -437,10 +439,10 @@ object Indicators {
         val recent = kline.takeLast(10)
         val startPrice = recent.first().close
         val periodPct = (last.close - startPrice) / startPrice * 100
-        sb.append("近%d日涨跌幅: %+.2f%%\n".format(recent.size, periodPct))
+        sb.append("近" + recent.size + "日涨跌幅: " + Fmt.s(periodPct) + "%\n")
         val hi = recent.maxOf { it.high }
         val lo = recent.minOf { it.low }
-        sb.append("近%d日最高 %.2f，最低 %.2f\n".format(recent.size, hi, lo))
+        sb.append("近" + recent.size + "日最高 " + Fmt.d(hi) + "，最低 " + Fmt.d(lo) + "\n")
         return sb.toString()
     }
 
@@ -458,7 +460,7 @@ object Indicators {
         }
     }
 
-    fun fmtAbs(v: Double): String = "%.2f".format(abs(v))
+    fun fmtAbs(v: Double): String = Fmt.d(abs(v))
 
     // ========== 新增特色指标 ==========
 

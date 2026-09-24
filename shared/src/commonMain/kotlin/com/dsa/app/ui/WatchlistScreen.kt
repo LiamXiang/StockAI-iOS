@@ -1,5 +1,7 @@
 package com.dsa.app.ui
 
+import com.dsa.app.util.Fmt
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,7 +33,7 @@ import com.dsa.app.ui.theme.DsaRed
 import kotlinx.coroutines.launch
 import kotlinx.datetime.toLocalDateTime
 
-private fun fmt(v: Double): String = if (v == 0.0) "—" else "%.2f".format(v)
+private fun fmt(v: Double): String = if (v == 0.0) "—" else Fmt.d(v)
 
 @Composable
 fun WatchlistScreen(
@@ -242,9 +244,9 @@ private fun StockCard(quote: Quote?, code: String, onOpen: () -> Unit, onRemove:
                 else -> DsaGreen
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(q?.let { "%.2f".format(it.price) } ?: "—", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = color)
+                Text(q?.let { Fmt.d(it.price) } ?: "—", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = color)
                 Spacer(Modifier.height(2.dp))
-                Text(q?.let { "%+.2f  %+.2f%%".format(it.change, it.changePct) } ?: "—", fontSize = 12.sp, color = color)
+                Text(q?.let { Fmt.s(it.change) + "  " + Fmt.s(it.changePct) + "%" } ?: "—", fontSize = 12.sp, color = color)
             }
             Spacer(Modifier.width(8.dp))
             IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
@@ -277,7 +279,7 @@ private fun HoldingCard(quote: Quote?, holding: Holding, onOpen: () -> Unit, onE
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "持仓 ${holding.shares}股  成本 ${fmt(holding.costPrice)}  浮盈 ${if (profitPct >= 0) "+" else ""}${"%.2f".format(profitPct)}%",
+                    "持仓 ${holding.shares}股  成本 ${fmt(holding.costPrice)}  浮盈 ${if (profitPct >= 0) "+" else ""}${Fmt.d(profitPct)}%",
                     fontSize = 12.sp, color = profitColor,
                 )
             }
@@ -287,9 +289,9 @@ private fun HoldingCard(quote: Quote?, holding: Holding, onOpen: () -> Unit, onE
                 else -> DsaGreen
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(q?.let { "%.2f".format(it.price) } ?: "—", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = color)
+                Text(q?.let { Fmt.d(it.price) } ?: "—", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = color)
                 Spacer(Modifier.height(2.dp))
-                Text(q?.let { "%+.2f  %+.2f%%".format(it.change, it.changePct) } ?: "—", fontSize = 12.sp, color = color)
+                Text(q?.let { Fmt.s(it.change) + "  " + Fmt.s(it.changePct) + "%" } ?: "—", fontSize = 12.sp, color = color)
             }
             Spacer(Modifier.width(4.dp))
             IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
@@ -324,12 +326,12 @@ private fun HoldingSummaryCard(vm: SharedViewModel) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("总市值", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("%.2f".format(totalValue), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(Fmt.d(totalValue), fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("总盈亏", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("%+.2f  (%+.2f%%)".format(profit, profitPct), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = color)
+                Text(Fmt.s(profit) + "  (" + Fmt.s(profitPct) + "%)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = color)
             }
         }
     }
@@ -456,7 +458,7 @@ private fun HoldingEditDialog(
     onSave: (Holding) -> Unit,
 ) {
     var sharesText by remember { mutableStateOf(holding.shares.let { if (it > 0) it.toString() else "" }) }
-    var costText by remember { mutableStateOf(holding.costPrice.let { if (it > 0) "%.2f".format(it) else "" }) }
+    var costText by remember { mutableStateOf(holding.costPrice.let { if (it > 0) Fmt.d(it) else "" }) }
     val shares = sharesText.toIntOrNull() ?: 0
     val cost = costText.toDoubleOrNull() ?: 0.0
     AlertDialog(
@@ -549,7 +551,7 @@ private fun HistoryDialog(vm: SharedViewModel, onDismiss: () -> Unit) {
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     ) {
                         Column(Modifier.padding(10.dp)) {
-                            Text("${r.accountName} · ${r.stockCount}只 · %04d-%02d-%02d".format(dt.year, dt.monthNumber, dt.dayOfMonth), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("${r.accountName} · ${r.stockCount}只 · " + Fmt.ymd(dt.year, dt.monthNumber, dt.dayOfMonth), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             Text(r.content.take(80) + if (r.content.length > 80) "…" else "", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
                         }
                     }
@@ -566,11 +568,7 @@ private fun HistoryDialog(vm: SharedViewModel, onDismiss: () -> Unit) {
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     ) {
                         Column(Modifier.padding(10.dp)) {
-                            Text("${c.accountName} 变化分析 · %04d-%02d-%02d".format(
-                                kotlinx.datetime.Instant.fromEpochMilliseconds(c.createdAt).toLocalDateTime(kotlinx.datetime.TimeZone.UTC).year,
-                                kotlinx.datetime.Instant.fromEpochMilliseconds(c.createdAt).toLocalDateTime(kotlinx.datetime.TimeZone.UTC).monthNumber,
-                                kotlinx.datetime.Instant.fromEpochMilliseconds(c.createdAt).toLocalDateTime(kotlinx.datetime.TimeZone.UTC).dayOfMonth,
-                            ), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("${c.accountName} 变化分析 · " + Fmt.date(c.createdAt), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             Text(c.content.take(80) + if (c.content.length > 80) "…" else "", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
                         }
                     }
@@ -607,12 +605,7 @@ private fun HoldingChangeDialog(vm: SharedViewModel, onDismiss: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "%04d-%02d-%02d  %s  ${s.holdings.size}只".format(
-                                    kotlinx.datetime.Instant.fromEpochMilliseconds(s.createdAt).toLocalDateTime(kotlinx.datetime.TimeZone.UTC).year,
-                                    kotlinx.datetime.Instant.fromEpochMilliseconds(s.createdAt).toLocalDateTime(kotlinx.datetime.TimeZone.UTC).monthNumber,
-                                    kotlinx.datetime.Instant.fromEpochMilliseconds(s.createdAt).toLocalDateTime(kotlinx.datetime.TimeZone.UTC).dayOfMonth,
-                                    s.source,
-                                ),
+                                Fmt.date(s.createdAt) + "  " + s.source + "  ${s.holdings.size}只",
                                 fontSize = 13.sp,
                             )
                             Spacer(Modifier.weight(1f))

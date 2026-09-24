@@ -1,5 +1,7 @@
 package com.dsa.app.ui
 
+import com.dsa.app.util.Fmt
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -24,7 +26,7 @@ import com.dsa.app.ui.chart.IndicatorMode
 import com.dsa.app.ui.theme.DsaGreen
 import com.dsa.app.ui.theme.DsaRed
 
-private fun fmtD(v: Double): String = if (v == 0.0) "—" else "%.2f".format(v)
+private fun fmtD(v: Double): String = if (v == 0.0) "—" else Fmt.d(v)
 
 @Composable
 fun DetailScreen(
@@ -124,10 +126,10 @@ fun DetailScreen(
                     // 行情头部
                     quote?.let { q ->
                         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.Bottom) {
-                            Text("%.2f".format(q.price), fontSize = 32.sp, fontWeight = FontWeight.Bold,
+                            Text(Fmt.d(q.price), fontSize = 32.sp, fontWeight = FontWeight.Bold,
                                 color = if (q.isUp) DsaRed else DsaGreen)
                             Spacer(Modifier.width(10.dp))
-                            Text("%+.2f  %+.2f%%".format(q.change, q.changePct), fontSize = 16.sp,
+                            Text(Fmt.s(q.change) + "  " + Fmt.s(q.changePct) + "%", fontSize = 16.sp,
                                 color = if (q.isUp) DsaRed else DsaGreen)
                         }
                         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -136,15 +138,15 @@ fun DetailScreen(
                         }
                         Spacer(Modifier.height(4.dp))
                         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            InfoItem("成交量", "${q.volume}手"); InfoItem("成交额", "%.0f万".format(q.amount))
-                            InfoItem("换手", "%.2f%%".format(q.turnover))
-                            InfoItem("振幅", "%.2f%%".format(q.amplitude))
+                            InfoItem("成交量", "${q.volume}手"); InfoItem("成交额", Fmt.d(q.amount, 0) + "万")
+                            InfoItem("换手", Fmt.d(q.turnover) + "%")
+                            InfoItem("振幅", Fmt.d(q.amplitude) + "%")
                         }
                         if (q.pe > 0) {
                             Spacer(Modifier.height(4.dp))
                             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                InfoItem("市盈率", "%.2f".format(q.pe)); InfoItem("市净率", "%.2f".format(q.pb))
-                                InfoItem("总市值", "%.0f亿".format(q.marketCap)); InfoItem("流通市值", "%.0f亿".format(q.floatCap))
+                                InfoItem("市盈率", Fmt.d(q.pe)); InfoItem("市净率", Fmt.d(q.pb))
+                                InfoItem("总市值", Fmt.d(q.marketCap, 0) + "亿"); InfoItem("流通市值", Fmt.d(q.floatCap, 0) + "亿")
                             }
                         }
                     }
@@ -243,7 +245,7 @@ private fun IndicatorSummary(
 ) {
     if (kline.isEmpty()) return
     val n = kline.size - 1
-    fun fmt(v: Double?) = if (v == null || v.isNaN()) "—" else "%.2f".format(v)
+    fun fmt(v: Double?) = if (v == null || v.isNaN()) "—" else Fmt.d(v)
     val trend = Indicators.maTrend(ind, n)
     val trendColor = when (trend) {
         "多头排列" -> DsaRed
@@ -278,7 +280,7 @@ private fun IndicatorSummary(
             Spacer(Modifier.height(6.dp))
             Text("阶段: ${wyckoffResult.stage}（${wyckoffResult.stageDescription}）", fontSize = 12.sp, fontWeight = FontWeight.Medium)
             wyckoffResult.tradingRange?.let { tr ->
-                Text("交易区间: %.2f - %.2f".format(tr.support, tr.resistance), fontSize = 12.sp)
+                Text("交易区间: " + Fmt.d(tr.support) + " - " + Fmt.d(tr.resistance), fontSize = 12.sp)
             }
             wyckoffResult.signals.take(3).forEach { s ->
                 Text("• ${s.type}: ${s.description}", fontSize = 12.sp)

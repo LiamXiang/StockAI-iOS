@@ -1,5 +1,7 @@
 package com.dsa.app.data
 
+import com.dsa.app.util.Fmt
+
 import com.dsa.app.analysis.Indicators
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -69,7 +71,7 @@ object AiApi {
     }
 
     private suspend fun callOnce(apiKey: String, model: String, messages: List<ChatMessage>, providerId: String, customBaseUrl: String): String =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             val payload = if (providerId == "custom") {
                 val msgsJson = messages.joinToString(",") { m ->
                     """{"role":"${m.role}","content":${json.encodeToString(m.content)}}"""
@@ -115,7 +117,7 @@ object AiApi {
 
     /** 拉取模型列表 */
     suspend fun fetchModels(apiKey: String, providerId: String, customBaseUrl: String = ""): List<String> =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             if (apiKey.isBlank()) throw AiException("请先填写 API Key")
             val url = getModelsUrl(providerId, customBaseUrl)
             val resp = client.get(url) {
@@ -150,11 +152,10 @@ object AiApi {
         if (quote != null) {
             sb.append("【实时行情】\n")
             sb.append("名称: ${quote.name}（${quote.code}）\n")
-            sb.append("现价: %.2f，涨跌: %+.2f（%+.2f%%），今开: %.2f，最高: %.2f，最低: %.2f\n"
-                .format(quote.price, quote.change, quote.changePct, quote.open, quote.high, quote.low))
-            sb.append("成交量: ${quote.volume}手，成交额: %.2f万元，换手率: %.2f%%\n".format(quote.amount, quote.turnover))
-            if (quote.pe > 0) sb.append("市盈率(PE): %.2f，市净率(PB): %.2f\n".format(quote.pe, quote.pb))
-            if (quote.marketCap > 0) sb.append("总市值: %.2f亿，流通市值: %.2f亿\n".format(quote.marketCap, quote.floatCap))
+            sb.append("现价: " + Fmt.d(quote.price) + "，涨跌: " + Fmt.s(quote.change) + "（" + Fmt.s(quote.changePct) + "%），今开: " + Fmt.d(quote.open) + "，最高: " + Fmt.d(quote.high) + "，最低: " + Fmt.d(quote.low) + "\n")
+            sb.append("成交量: ${quote.volume}手，成交额: " + Fmt.d(quote.amount) + "万元，换手率: " + Fmt.d(quote.turnover) + "%\n")
+            if (quote.pe > 0) sb.append("市盈率(PE): " + Fmt.d(quote.pe) + "，市净率(PB): " + Fmt.d(quote.pb) + "\n")
+            if (quote.marketCap > 0) sb.append("总市值: " + Fmt.d(quote.marketCap) + "亿，流通市值: " + Fmt.d(quote.floatCap) + "亿\n")
             sb.append("\n")
         }
         if (kline.isNotEmpty()) {
@@ -164,7 +165,7 @@ object AiApi {
             sb.append("\n")
             sb.append("【近12日K线】\n")
             kline.takeLast(12).forEach { k ->
-                sb.append("%s 开%.2f 高%.2f 低%.2f 收%.2f 量%.0f\n".format(k.day, k.open, k.high, k.low, k.close, k.volume))
+                sb.append(k.day + " 开" + Fmt.d(k.open) + " 高" + Fmt.d(k.high) + " 低" + Fmt.d(k.low) + " 收" + Fmt.d(k.close) + " 量" + Fmt.d(k.volume, 0) + "\n")
             }
         }
         if (userRequest.isNotBlank()) {
@@ -221,11 +222,9 @@ object AiApi {
         items.forEachIndexed { idx, item ->
             sb.append("=== ${idx + 1}. ${item.name}（${item.code}）===\n")
             if (item.shares > 0) {
-                sb.append("持仓: ${item.shares}股，成本价: %.2f，现价: %.2f，浮盈: %+.2f%%\n"
-                    .format(item.costPrice, item.price,
-                        if (item.costPrice > 0) (item.price - item.costPrice) / item.costPrice * 100 else 0.0))
+                sb.append("持仓: ${item.shares}股，成本价: " + Fmt.d(item.costPrice) + "，现价: " + Fmt.d(item.price) + "，浮盈: " + Fmt.s(if (item.costPrice > 0) (item.price - item.costPrice) / item.costPrice * 100 else 0.0) + "%\n")
             }
-            sb.append("现价: %.2f，涨跌: %+.2f%%\n".format(item.price, item.changePct))
+            sb.append("现价: " + Fmt.d(item.price) + "，涨跌: " + Fmt.s(item.changePct) + "%\n")
             if (item.summary.isNotBlank()) sb.append(item.summary).append("\n")
             sb.append("\n")
         }
@@ -270,7 +269,7 @@ object AiApi {
 
     /** OCR 识别图片文字（PaddleOCR-VL） */
     suspend fun ocrImage(apiKeys: List<String>, base64Image: String): String =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             if (apiKeys.isEmpty()) throw AiException("请先在设置中填写 API Key")
             var lastError: Exception? = null
             for (key in apiKeys) {

@@ -1,5 +1,7 @@
 package com.dsa.app.analysis
 
+import com.dsa.app.util.Fmt
+
 import com.dsa.app.data.KlinePoint
 import kotlin.math.abs
 import kotlin.math.max
@@ -411,7 +413,7 @@ object WyckoffAnalysis {
         val recentLow = lows.takeLast(20).min()
         val amplitude = (recentHigh - recentLow) / closes.last() * 100
 
-        return "当前处于$trend，近20日振幅${"%.1f".format(amplitude)}%"
+        return "当前处于$trend，近20日振幅${Fmt.d(amplitude, 1)}%"
     }
 
     /**
@@ -445,7 +447,7 @@ object WyckoffAnalysis {
             hasSellSignal && stage == Stage.MARKDOWN ->
                 "$baseSuggestion，继续回避"
             tradingRange != null ->
-                "$baseSuggestion，区间支撑${"%.2f".format(tradingRange.support)}，阻力${"%.2f".format(tradingRange.resistance)}"
+                "$baseSuggestion，区间支撑${Fmt.d(tradingRange.support)}，阻力${Fmt.d(tradingRange.resistance)}"
             else -> baseSuggestion
         }
     }

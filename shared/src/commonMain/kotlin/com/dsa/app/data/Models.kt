@@ -29,7 +29,7 @@ data class Quote(
     val limitDown: Double get() = round2(prevClose * 0.90)
 
     companion object {
-        fun round2(v: Double): Double = Math.round(v * 100.0) / 100.0
+        fun round2(v: Double): Double = kotlin.math.round(v * 100.0) / 100.0
     }
 }
 

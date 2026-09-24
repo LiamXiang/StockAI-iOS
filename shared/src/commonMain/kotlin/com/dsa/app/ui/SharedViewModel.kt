@@ -1,5 +1,7 @@
 package com.dsa.app.ui
 
+import com.dsa.app.util.Fmt
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -88,14 +90,14 @@ class SharedViewModel(
         if (t.isEmpty()) return null
         if (isCode(t)) return t
         val tencent = try {
-            withContext(Dispatchers.IO) {
+            withContext(Dispatchers.Default) {
                 MarketApi.searchStocks(input).firstOrNull()?.let { s -> s.code }
             }
         } catch (e: Exception) { null }
         if (tencent != null && isCode(tencent)) return tencent
         if (thsApiKey.isNotBlank()) {
             val ths = try {
-                withContext(Dispatchers.IO) {
+                withContext(Dispatchers.Default) {
                     ThsApi.search(input, thsApiKey, 1).firstOrNull()?.code
                 }
             } catch (e: Exception) { null }
@@ -397,7 +399,7 @@ class SharedViewModel(
         aiReport = null
         scope.launch {
             try {
-                val kl = withContext(Dispatchers.IO) { MarketApi.fetchKline(code, "day", 320) }
+                val kl = withContext(Dispatchers.Default) { MarketApi.fetchKline(code, "day", 320) }
                 val ind = com.dsa.app.analysis.Indicators.computeAll(kl)
                 val messages = AiApi.buildAnalysisMessages(q, kl, ind, userRequest)
                 val content = AiApi.chat(currentApiKeys, model, messages, aiProvider, customBaseUrl)
@@ -436,7 +438,7 @@ class SharedViewModel(
                 for (c in codes) {
                     val q = quotes[c]
                     val h = acc.holdings.firstOrNull { normalizeCode(it.code) == c }
-                    val kl = withContext(Dispatchers.IO) { MarketApi.fetchKline(c, "day", 320) }
+                    val kl = withContext(Dispatchers.Default) { MarketApi.fetchKline(c, "day", 320) }
                     val ind = com.dsa.app.analysis.Indicators.computeAll(kl)
                     val summary = com.dsa.app.analysis.Indicators.summarize(kl, ind)
                     items.add(AiApi.PortfolioItem(
@@ -492,7 +494,7 @@ class SharedViewModel(
                         else -> {
                             val diff = (n?.shares ?: 0) - (o?.shares ?: 0)
                             val costDiff = (n?.costPrice ?: 0.0) - (o?.costPrice ?: 0.0)
-                            if (diff > 0) sb.append("增持 ${diff}股（${o?.shares}→${n?.shares}），成本${o?.costPrice}→${n?.costPrice}（${if (costDiff >= 0) "+" else ""}${"%.2f".format(costDiff)}）\n")
+                            if (diff > 0) sb.append("增持 ${diff}股（${o?.shares}→${n?.shares}），成本${o?.costPrice}→${n?.costPrice}（${if (costDiff >= 0) "+" else ""}${Fmt.d(costDiff)}）\n")
                             else if (diff < 0) sb.append("减持 ${-diff}股（${o?.shares}→${n?.shares}）\n")
                             else sb.append("持仓数量未变（${o?.shares}股）\n")
                         }
@@ -528,12 +530,12 @@ class SharedViewModel(
     private fun calcProfit(h: Holding, q: Quote?): String {
         if (h.costPrice <= 0 || q == null) return "—"
         val p = (q.price - h.costPrice) / h.costPrice * 100
-        return "%+.2f%%".format(p)
+        return Fmt.s(p) + "%"
     }
 
     private fun formatTime(ms: Long): String {
         val dt = kotlinx.datetime.Instant.fromEpochMilliseconds(ms)
             .toLocalDateTime(kotlinx.datetime.TimeZone.UTC)
-        return "%04d-%02d-%02d %02d:%02d".format(dt.year, dt.monthNumber, dt.dayOfMonth, dt.hour, dt.minute)
+        return Fmt.ymdhm(dt.year,dt.monthNumber,dt.dayOfMonth,dt.hour,dt.minute)
     }
 }

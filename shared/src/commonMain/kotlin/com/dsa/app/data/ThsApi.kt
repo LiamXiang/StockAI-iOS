@@ -1,5 +1,7 @@
 package com.dsa.app.data
 
+import com.dsa.app.util.Fmt
+
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.client.request.header
@@ -111,7 +113,7 @@ object ThsApi {
         // yyyy-MM-dd（跨平台，使用 kotlinx-datetime）
         val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(ms)
         val dt = instant.toLocalDateTime(kotlinx.datetime.TimeZone.UTC)
-        return "%04d-%02d-%02d".format(dt.year, dt.monthNumber, dt.dayOfMonth)
+        return Fmt.ymd(dt.year,dt.monthNumber,dt.dayOfMonth)
     }
 
     /** 搜索股票 */

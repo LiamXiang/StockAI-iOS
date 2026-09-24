@@ -1,5 +1,7 @@
 package com.dsa.app.ui.chart
 
+import com.dsa.app.util.Fmt
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -132,7 +134,7 @@ fun CandlestickChart(
             val y = priceTop + (priceBottom - priceTop) * i / gridLines
             drawLine(BgGrid, Offset(0f, y), Offset(w, y), strokeWidth = 1f)
             val price = hi - (hi - lo) * i / gridLines
-            val layout = textMeasurer.measure("%.2f".format(price), TextStyleSmall)
+            val layout = textMeasurer.measure(Fmt.d(price), TextStyleSmall)
             drawText(layout, topLeft = Offset(4f, y - layout.size.height / 2f))
         }
 
@@ -162,7 +164,7 @@ fun CandlestickChart(
             lastColor.copy(alpha = 0.5f), Offset(0f, lastY), Offset(w, lastY),
             strokeWidth = 1f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
         )
-        val lastLabel = textMeasurer.measure("%.2f".format(lastPrice), TextStyleValue.copy(color = Color.White))
+        val lastLabel = textMeasurer.measure(Fmt.d(lastPrice), TextStyleValue.copy(color = Color.White))
         drawRect(lastColor, Offset(w - lastLabel.size.width - 6f, lastY - lastLabel.size.height / 2f - 2f),
             size = androidx.compose.ui.geometry.Size(lastLabel.size.width + 6f, lastLabel.size.height + 4f))
         drawText(lastLabel, topLeft = Offset(w - lastLabel.size.width - 3f, lastY - lastLabel.size.height / 2f))
@@ -208,12 +210,12 @@ fun CandlestickChart(
             drawLine(CrosshairColor, Offset(0f, cy), Offset(w, cy), strokeWidth = 1f)
             // 水平价格标签
             val crossPrice = lo + (hi - lo) * (priceBottom - cy) / (priceBottom - priceTop)
-            val cpLabel = textMeasurer.measure("%.2f".format(crossPrice), TextStyleValue.copy(color = Color.White))
+            val cpLabel = textMeasurer.measure(Fmt.d(crossPrice), TextStyleValue.copy(color = Color.White))
             drawRect(CrosshairColor, Offset(0f, cy - cpLabel.size.height / 2f - 2f),
                 size = androidx.compose.ui.geometry.Size(cpLabel.size.width + 6f, cpLabel.size.height + 4f))
             drawText(cpLabel, topLeft = Offset(3f, cy - cpLabel.size.height / 2f))
             // 顶部 OHLC 浮窗
-            val ohlcText = "${k.day}  开${"%.2f".format(k.open)}  高${"%.2f".format(k.high)}  低${"%.2f".format(k.low)}  收${"%.2f".format(k.close)}  量${"%.0f".format(k.volume)}"
+            val ohlcText = "${k.day}  开${Fmt.d(k.open)}  高${Fmt.d(k.high)}  低${Fmt.d(k.low)}  收${Fmt.d(k.close)}  量${Fmt.d(k.volume, 0)}"
             val ohlcLabel = textMeasurer.measure(ohlcText, TextStyleValue.copy(color = Color.White))
             val boxW = min(ohlcLabel.size.width + 12f, w - 8f)
             val boxX = (cx - boxW / 2f).coerceIn(4f, w - boxW - 4f)
@@ -282,7 +284,7 @@ private fun DrawScope.drawIndicatorPanel(
     fun slotX(i: Int): Float = slot * i + slot / 2
     fun yFor(value: Double, minV: Double, maxV: Double): Float =
         bottom - ((value - minV) / (if (maxV > minV) maxV - minV else 1.0) * (bottom - top)).toFloat()
-    fun fmt(v: Double?) = if (v == null || v.isNaN()) "—" else "%.2f".format(v)
+    fun fmt(v: Double?) = if (v == null || v.isNaN()) "—" else Fmt.d(v)
 
     val n = (startIdx + view.size - 1).coerceIn(0, (ind.dif?.size ?: 1) - 1)
 
