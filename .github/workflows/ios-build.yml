@@ -70,38 +70,7 @@ jobs:
           echo "=== Crash Reports (.ips) ==="
           ls -lt ~/Library/Logs/DiagnosticReports/ 2>/dev/null | grep -i stockai | head -3
           CRASH=$(ls -t ~/Library/Logs/DiagnosticReports/StockAI*.ips 2>/dev/null | head -1)
-          if [ -n "$CRASH" ]; then
-            echo "CRASH_FILE=$CRASH"
-            python3 - "$CRASH" <<'PYEOF'
-import json, sys
-p = sys.argv[1]
-txt = open(p, encoding="utf-8", errors="replace").read()
-lines = txt.split("\n")
-for line in lines:
-    if not line.strip():
-        continue
-    try:
-        d = json.loads(line)
-    except Exception:
-        continue
-    if not isinstance(d, dict):
-        continue
-    if "exception" in d:
-        print("exception:", json.dumps(d.get("exception", {}), ensure_ascii=False))
-        print("termination:", json.dumps(d.get("termination", {}), ensure_ascii=False))
-        ft = d.get("faultingThread")
-        threads = d.get("threads", [])
-        imgs = d.get("usedImages", [])
-        if ft is not None and ft < len(threads):
-            frames = threads[ft].get("frames", [])[:20]
-            for fr in frames:
-                ix = fr.get("imageIndex")
-                img = imgs[ix] if isinstance(ix, int) and ix < len(imgs) else {}
-                print("  ", img.get("name", "?"), "|", fr.get("symbol", ""))
-PYEOF
-          else
-            echo "NO_CRASH_REPORT_FOUND"
-          fi
+          if [ -z "$CRASH" ]; then echo "NO_CRASH_REPORT_FOUND"; else echo "CRASH_FILE=$CRASH"; python3 -c "import json; txt=open('$CRASH',encoding='utf-8',errors='replace').read(); [print('exception:',json.dumps(d.get('exception',{}),ensure_ascii=False),'termination:',json.dumps(d.get('termination',{}),ensure_ascii=False)) for line in txt.split(chr(10)) if line.strip() for d in [__import__('json').loads(line)] if isinstance(d,dict) and 'exception' in d]"; fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
