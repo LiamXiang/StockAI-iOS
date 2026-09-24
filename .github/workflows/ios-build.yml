@@ -60,9 +60,15 @@ jobs:
           xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
           xcrun simctl bootstatus "$DEVICE_ID" -b 2>&1 | tail -2
           xcrun simctl install booted iosApp/build/Debug-iphonesimulator/StockAI.app && echo "INSTALL_OK"
-          echo "=== 启动 App ==="
+          echo "=== 启动 App（带控制台输出）==="
           xcrun simctl launch booted com.dsa.stockai && echo "LAUNCH_RETURNED"
-          sleep 12
+          sleep 5
+          xcrun simctl launch --terminate-running-process --console-pty booted com.dsa.stockai > /tmp/app_out.txt 2>&1 &
+          CPID=$!
+          sleep 15
+          kill $CPID 2>/dev/null || true
+          echo "=== App 控制台输出 ==="
+          cat /tmp/app_out.txt | tail -100
           echo "=== 进程存活检查 ==="
           xcrun simctl spawn booted launchctl list | grep -i stockai && echo "APP_ALIVE" || echo "APP_CRASHED_OR_NOT_RUNNING"
           echo "=== StockAI 相关日志 ==="
