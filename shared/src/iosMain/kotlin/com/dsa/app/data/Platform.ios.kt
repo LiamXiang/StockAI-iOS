@@ -6,14 +6,16 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.serialization.json.Json
 import platform.Foundation.NSData
 import platform.Foundation.NSString
 import platform.Foundation.create
 import platform.Foundation.dataWithBytes
-import platform.Foundation.NSUTF8StringEncoding
-import platform.Foundation.NSGBKStringEncoding
-import platform.Foundation.stringWithData
+
+/** NSGBKStringEncoding = 0x80000632（Kotlin/Native 未导出该常量，直接给数值） */
+private const val GBK_ENCODING = 0x80000632u
 
 actual fun createHttpClient(): HttpClient = HttpClient(Darwin) {
     install(ContentNegotiation) {
@@ -31,5 +33,5 @@ actual fun decodeGbk(bytes: ByteArray): String {
     val data = bytes.usePinned { pinned ->
         NSData.dataWithBytes(pinned.addressOf(0), bytes.size.toULong())
     }
-    return NSString.stringWithData(data, NSGBKStringEncoding) ?: ""
+    return NSString.create(data = data, encoding = GBK_ENCODING)?.toString() ?: ""
 }
