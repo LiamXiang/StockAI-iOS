@@ -3,14 +3,27 @@ package com.dsa.app
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.ComposeUIViewController
 import com.dsa.app.ui.SharedViewModel
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.setUnhandledExceptionHook
+import platform.Foundation.NSLog
 import platform.UIKit.UIViewController
 
 /** iOS 入口：SwiftUI 调用此函数获得 Compose 控制器。
  *  注意：不能标注 @Composable —— 带 @Composable 的函数不会被导出到 ObjC 头，
  *  Swift 侧将无法访问 MainViewControllerKt。 */
+@OptIn(ExperimentalNativeApi::class)
 fun MainViewController(): UIViewController {
-    return ComposeUIViewController {
-        val vm = remember { SharedViewModel() }
-        App(vm)
+    // 未捕获异常钩子：记录到系统日志，便于定位闪退
+    setUnhandledExceptionHook { e ->
+        NSLog("[StockAI-Crash] %@", e.message ?: e.toString())
+    }
+    return try {
+        ComposeUIViewController {
+            val vm = remember { SharedViewModel() }
+            App(vm)
+        }
+    } catch (e: Throwable) {
+        NSLog("[StockAI-InitError] %@", e.toString())
+        throw e
     }
 }
