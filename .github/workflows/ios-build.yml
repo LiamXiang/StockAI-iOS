@@ -40,6 +40,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
+          echo "=== Ad-hoc 签名（模拟器运行必需）==="
+          codesign --force --sign - --timestamp=none iosApp/build/Debug-iphonesimulator/StockAI.app
+          codesign -dv iosApp/build/Debug-iphonesimulator/StockAI.app 2>&1 | head -3
 
       - name: Package App
         run: |
@@ -76,7 +79,7 @@ jobs:
           echo "=== Crash Reports (.ips) ==="
           ls -lt ~/Library/Logs/DiagnosticReports/ 2>/dev/null | grep -i stockai | head -3
           CRASH=$(ls -t ~/Library/Logs/DiagnosticReports/StockAI*.ips 2>/dev/null | head -1)
-          if [ -z "$CRASH" ]; then echo "NO_CRASH_REPORT_FOUND"; else echo "CRASH_FILE=$CRASH"; python3 -c "import json; txt=open('$CRASH',encoding='utf-8',errors='replace').read(); [print('exception:',json.dumps(d.get('exception',{}),ensure_ascii=False),'termination:',json.dumps(d.get('termination',{}),ensure_ascii=False)) for line in txt.split(chr(10)) if line.strip() for d in [__import__('json').loads(line)] if isinstance(d,dict) and 'exception' in d]"; fi
+          if [ -z "$CRASH" ]; then echo "NO_CRASH_REPORT_FOUND"; else echo "CRASH_FILE=$CRASH"; python3 scripts/parse_ips.py "$CRASH" 2>&1; fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
