@@ -1,5 +1,7 @@
 package com.dsa.app.data
 
+import com.dsa.app.util.nowMs
+
 import com.russhwolf.settings.Settings
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -52,7 +54,7 @@ class Store(private val settings: Settings = createSettings()) {
 
     fun addAccount(name: String): String {
         val accounts = getAccounts().toMutableList()
-        val id = "account_${System.currentTimeMillis()}"
+        val id = "account_${nowMs()}"
         accounts.add(HoldingAccount(id = id, name = name))
         saveAccounts(accounts)
         return id

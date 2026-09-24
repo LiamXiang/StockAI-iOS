@@ -1,5 +1,7 @@
 package com.dsa.app.data
 
+import com.dsa.app.util.nowMs
+
 import kotlinx.serialization.Serializable
 
 /** 腾讯实时行情（qt.gtimg.cn）解析结果 */
@@ -172,12 +174,12 @@ data class IndicatorResult(
 /** AI 分析报告（持久化用） */
 @Serializable
 data class AnalysisReport(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = nowMs(),
     val code: String,
     val name: String,
     val content: String,
     val model: String = "",
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowMs(),
 )
 
 /** 持仓股（手动录入 / OCR 导入） */
@@ -199,30 +201,30 @@ data class HoldingAccount(
 /** 组合分析报告（持久化用） */
 @Serializable
 data class PortfolioReport(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = nowMs(),
     val content: String,
     val model: String = "",
     val stockCount: Int = 0,
     val totalValue: Double = 0.0,
     val accountId: String = "account_1",
     val accountName: String = "账号1",
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowMs(),
 )
 
 /** 持仓快照（用于跟踪持仓变化） */
 @Serializable
 data class HoldingSnapshot(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = nowMs(),
     val holdings: List<Holding>,
     val source: String = "manual", // manual / ocr / edit
     val accountId: String = "account_1",
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowMs(),
 )
 
 /** 持仓变化分析报告（持久化用） */
 @Serializable
 data class HoldingChangeReport(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = nowMs(),
     val content: String,
     val model: String = "",
     val oldSnapshotId: Long = 0,
@@ -231,7 +233,7 @@ data class HoldingChangeReport(
     val newSnapshotTime: Long = 0,
     val accountId: String = "account_1",
     val accountName: String = "账号1",
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowMs(),
 )
 
 /** AI 服务商配置 */

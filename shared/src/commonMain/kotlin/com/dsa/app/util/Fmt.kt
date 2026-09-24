@@ -1,5 +1,7 @@
 package com.dsa.app.util
 
+import com.dsa.app.util.nowMs
+
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.round
 
@@ -56,3 +58,6 @@ object Fmt {
         return "${dt.year}-${p2(dt.monthNumber)}-${p2(dt.dayOfMonth)} ${p2(dt.hour)}:${p2(dt.minute)}"
     }
 }
+
+/** 当前毫秒时间戳（跨平台，替代 System.currentTimeMillis） */
+fun nowMs(): Long = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()

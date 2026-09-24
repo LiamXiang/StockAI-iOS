@@ -1,5 +1,7 @@
 package com.dsa.app.data
 
+import com.dsa.app.util.nowMs
+
 import com.dsa.app.util.Fmt
 
 import io.ktor.client.request.get
@@ -83,7 +85,7 @@ object ThsApi {
 
     /** 获取历史K线 */
     suspend fun fetchKline(code: String, days: Int = 250, apiKey: String): List<KlinePoint> {
-        val end = System.currentTimeMillis()
+        val end = nowMs()
         val start = end - (days.toLong() * 86400000)
         val thscode = toThsCode(code)
         val response = get(
