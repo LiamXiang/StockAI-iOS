@@ -45,9 +45,8 @@ jobs:
         run: |
           cd iosApp/build/Debug-iphonesimulator
           zip -r StockAI-ios-simulator.zip StockAI.app
-          cd ../..
-          cp iosApp/build/Debug-iphonesimulator/StockAI-ios-simulator.zip ./StockAI-ios-simulator.zip
-          ls -la
+          cp StockAI-ios-simulator.zip ../../../StockAI-ios-simulator.zip
+          ls -la ../../../StockAI-ios-simulator.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
