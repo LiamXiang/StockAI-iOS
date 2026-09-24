@@ -28,6 +28,13 @@ jobs:
       - name: Build iOS Simulator Framework (KMP)
         run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon
 
+      - name: Inspect framework symbols
+        run: |
+          ls -la shared/build/bin/iosSimulatorArm64/debugFramework/ComposeApp.framework
+          ls -la shared/build/bin/iosSimulatorArm64/debugFramework/ComposeApp.framework/Headers 2>/dev/null || true
+          grep -rn "MainViewController" shared/build/bin/iosSimulatorArm64/debugFramework/ComposeApp.framework/Headers 2>/dev/null | head -5 || true
+          find shared/build/bin/iosSimulatorArm64/debugFramework/ComposeApp.framework -name "*.swiftinterface" | head -5
+
       - name: Build iOS App (Simulator, no signing)
         run: |
           xcodebuild \
