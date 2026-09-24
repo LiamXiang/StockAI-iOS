@@ -85,7 +85,15 @@ jobs:
           echo "=== Crash Reports (.ips) ==="
           ls -lt ~/Library/Logs/DiagnosticReports/ 2>/dev/null | grep -i stockai | head -3
           CRASH=$(ls -t ~/Library/Logs/DiagnosticReports/StockAI*.ips 2>/dev/null | head -1)
-          if [ -z "$CRASH" ]; then echo "NO_CRASH_REPORT_FOUND"; else echo "CRASH_FILE=$CRASH"; python3 scripts/parse_ips.py "$CRASH" 2>&1; fi
+          if [ -z "$CRASH" ]; then echo "NO_CRASH_REPORT_FOUND"; else echo "CRASH_FILE=$CRASH"; python3 scripts/parse_ips.py "$CRASH" 2>&1; cp "$CRASH" StockAI-crash.ips; fi
+
+      - name: Upload Crash Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: StockAI-CrashReport
+          path: StockAI-crash.ips
+          if-no-files-found: ignore
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
