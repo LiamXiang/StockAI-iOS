@@ -7,7 +7,6 @@ import com.dsa.app.ui.SharedViewModel
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.native.setUnhandledExceptionHook
 import platform.Foundation.NSLog
-import platform.Foundation.NSString
 import platform.UIKit.UIViewController
 
 /** iOS 入口：SwiftUI 调用此函数获得 Compose 控制器。
@@ -15,11 +14,10 @@ import platform.UIKit.UIViewController
  *  Swift 侧将无法访问 MainViewControllerKt。 */
 @OptIn(ExperimentalNativeApi::class)
 fun MainViewController(): UIViewController {
-    // 未捕获异常钩子：记录到系统日志，便于定位闪退（显式 NSString 桥接，避免 NSLog format 崩溃）
+    // 未捕获异常钩子：纯 Kotlin println（terminate 路径里 NSLog 的 ObjC 桥接不安全，会二次崩溃）
     setUnhandledExceptionHook { e ->
         val msg = e.message ?: e.toString()
-        val ns = NSString.create(string = "[StockAI-Crash] $msg")
-        NSLog("%@", ns)
+        println("[StockAI-Crash] $msg")
     }
     NSLog("[StockAI-MARK] enter MainViewController")
     return try {
