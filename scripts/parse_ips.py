@@ -9,24 +9,30 @@ def main():
         print("usage: parse_ips.py <file.ips>")
         return
     txt = open(sys.argv[1], encoding="utf-8", errors="replace").read()
-    for line in txt.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
+    decoder = json.JSONDecoder()
+    pos = 0
+    n = len(txt)
+    while pos < n:
+        while pos < n and txt[pos] != "{":
+            pos += 1
+        if pos >= n:
+            break
         try:
-            d = json.loads(line)
+            d, end = decoder.raw_decode(txt, pos)
         except Exception:
+            pos += 1
             continue
+        pos = end
         if not isinstance(d, dict):
             continue
-        # 只处理主崩溃行（有 exception 或 termination 或 faultingThread 的）
         if "exception" not in d and "termination" not in d and "faultingThread" not in d:
             continue
         print("BUG_TYPE:", d.get("bug_type", "?"))
+        print("CAPTURE:", d.get("captureTime", ""))
+        print("LAUNCH:", d.get("procLaunch", ""))
         print("EXC:", json.dumps(d.get("exception", {}), ensure_ascii=False))
         print("TERM:", json.dumps(d.get("termination", {}), ensure_ascii=False))
-        print("ASI:", json.dumps(d.get("asi", {}), ensure_ascii=False)[:200])
-        print("RES:", json.dumps(d.get("reason", ""), ensure_ascii=False))
+        print("ASI:", json.dumps(d.get("asi", {}), ensure_ascii=False)[:300])
         print("SIG:", d.get("signal", {}))
         ft = d.get("faultingThread")
         th = d.get("threads", [])
@@ -37,6 +43,7 @@ def main():
                 ix = fr.get("imageIndex")
                 nm = im[ix].get("name", "?") if isinstance(ix, int) and ix < len(im) else "?"
                 print("FRAME:", nm, "|", fr.get("symbol", ""), "+", fr.get("imageOffset", ""))
+        print("LEGACY:", json.dumps(d.get("legacyInfo", {}), ensure_ascii=False)[:200])
         break
 
 
