@@ -15,7 +15,7 @@ import platform.Foundation.create
 import platform.Foundation.dataWithBytes
 
 /** NSGBKStringEncoding = 0x80000632（Kotlin/Native 未导出该常量，直接给数值） */
-private const val GBK_ENCODING = 0x80000632u
+private const val GBK_ENCODING: ULong = 0x80000632uL
 
 actual fun createHttpClient(): HttpClient = HttpClient(Darwin) {
     install(ContentNegotiation) {
