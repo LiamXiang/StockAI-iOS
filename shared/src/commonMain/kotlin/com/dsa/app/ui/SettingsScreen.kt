@@ -138,6 +138,55 @@ fun SettingsScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
 
         Spacer(Modifier.height(14.dp))
 
+        // ===== OCR 识别配置 =====
+        Text("OCR 识别配置（截图导入股票）", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(6.dp))
+        Text("用于「截图批量识别」功能：识别自选股代码、持仓股票名称/数量/成本价。使用当前主 API Key。", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+        Spacer(Modifier.height(6.dp))
+        var ocrProv by remember { mutableStateOf(vm.ocrProvider) }
+        var ocrModelText by remember { mutableStateOf(vm.ocrModel) }
+        var ocrExtractText by remember { mutableStateOf(vm.ocrExtractModel) }
+        var showOcrProvMenu by remember { mutableStateOf(false) }
+        OutlinedTextField(
+            value = AiApi.getProvider(ocrProv).name,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("OCR 服务商") },
+            trailingIcon = { Text("▾") },
+            modifier = Modifier.fillMaxWidth().clickable { showOcrProvMenu = true },
+        )
+        DropdownMenu(expanded = showOcrProvMenu, onDismissRequest = { showOcrProvMenu = false }) {
+            AiApi.PROVIDERS.forEach { p ->
+                DropdownMenuItem(
+                    text = { Text("${p.name}（${p.baseUrl}）", fontSize = 12.sp) },
+                    onClick = { ocrProv = p.id; showOcrProvMenu = false },
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value = ocrModelText, onValueChange = { ocrModelText = it },
+            label = { Text("识别模型（默认 PaddlePaddle/PaddleOCR-VL-1.5）") },
+            singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value = ocrExtractText, onValueChange = { ocrExtractText = it },
+            label = { Text("持仓提取模型（默认 THUDM/GLM-4-9B-0414）") },
+            singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(6.dp))
+        Button(
+            onClick = {
+                vm.setOcrConfig(ocrProv, ocrModelText.trim().ifBlank { "PaddlePaddle/PaddleOCR-VL-1.5" }, ocrExtractText.trim().ifBlank { "THUDM/GLM-4-9B-0414" })
+                showToast("OCR 配置已保存")
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("保存 OCR 配置") }
+        Text("支持视觉识别的服务商/模型示例：硅基流动 PaddlePaddle/PaddleOCR-VL-1.5、OpenAI gpt-4o、智谱 glm-4v 等", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+
+        Spacer(Modifier.height(14.dp))
+
         // ===== 数据源 =====
         Text("行情数据源", fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(6.dp))

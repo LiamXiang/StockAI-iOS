@@ -88,3 +88,26 @@ actual fun showToast(message: String) {
     // iOS 无系统 Toast，记日志即可；界面内已有状态文字提示
     println("[StockAI-Toast] $message")
 }
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun notifyAnalysisDone(title: String, body: String) {
+    try {
+        val center = platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter()
+        center.requestAuthorizationWithOptions(
+            platform.UserNotifications.UNAuthorizationOptionAlert or
+                platform.UserNotifications.UNAuthorizationOptionSound or
+                platform.UserNotifications.UNAuthorizationOptionBadge,
+        ) { _, _ -> }
+        val content = platform.UserNotifications.UNMutableNotificationContent()
+        content.setTitle(title)
+        content.setBody(body)
+        content.setSound(platform.UserNotifications.UNNotificationSound.defaultSound())
+        val trigger = platform.UserNotifications.UNTimeIntervalNotificationTrigger
+            .triggerWithTimeInterval(1.0, repeats = false)
+        val request = platform.UserNotifications.UNNotificationRequest
+            .requestWithIdentifier("stockai_analysis_done", content, trigger)
+        center.addNotificationRequest(request) { _ -> }
+    } catch (e: Throwable) {
+        println("[StockAI-Notify] 本地通知失败: ${e.message}")
+    }
+}

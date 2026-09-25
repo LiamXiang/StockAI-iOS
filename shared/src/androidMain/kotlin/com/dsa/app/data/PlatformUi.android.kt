@@ -69,3 +69,7 @@ actual fun shareText(title: String, text: String) {
 actual fun showToast(message: String) {
     Toast.makeText(AndroidApp.context, message, Toast.LENGTH_SHORT).show()
 }
+
+actual fun notifyAnalysisDone(title: String, body: String) {
+    Toast.makeText(AndroidApp.context, "$title：$body", Toast.LENGTH_LONG).show()
+}

@@ -911,10 +911,15 @@ private fun OcrImportDialog(
             try {
                 val base64 = base64Encode(bytes)
                 val keys = listOf(vm.apiKey1, vm.apiKey2).filter { it.isNotBlank() }
+                // OCR 使用设置页配置的服务商/模型（默认硅基流动 PaddleOCR-VL）
+                val ocrProvider = vm.ocrProvider
+                val ocrModel = vm.ocrModel
+                val ocrExtract = vm.ocrExtractModel
+                val ocrBaseUrl = vm.customBaseUrl
                 val list = if (tab == WatchTab.HOLDING) {
                     // 持仓模式：识别股票名称、数量、成本价
                     status = "持仓 OCR 识别中（两步：文字识别 + 结构化提取）…"
-                    val jsonText = AiApi.ocrHoldingImage(keys, base64)
+                    val jsonText = AiApi.ocrHoldingImage(keys, base64, ocrProvider, ocrModel, ocrExtract, ocrBaseUrl)
                     ocrText = jsonText
                     val jsonStart = jsonText.indexOf('[')
                     val jsonEnd = jsonText.lastIndexOf(']')
@@ -940,7 +945,7 @@ private fun OcrImportDialog(
                 } else {
                     // 自选模式：识别6位数字股票代码
                     status = "OCR 识别中…"
-                    val text = AiApi.ocrImage(keys, base64)
+                    val text = AiApi.ocrImage(keys, base64, ocrProvider, ocrModel, ocrBaseUrl)
                     ocrText = text
                     val codes = Regex("""\b(\d{6})\b""").findAll(text)
                         .map { it.groupValues[1] }

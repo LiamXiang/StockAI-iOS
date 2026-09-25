@@ -46,6 +46,9 @@ fun DetailScreen(
     var showAiHistory by remember { mutableStateOf(false) }
     var savedFlag by remember { mutableStateOf(false) }
 
+    // 切换股票时清空上一只股票的 AI 分析状态，避免报告串股
+    LaunchedEffect(code) { vm.resetAiState() }
+
     LaunchedEffect(code, period, retryCount) {
         try {
             val useThs = vm.dataSource == "ths" && vm.thsApiKey.isNotBlank() && !vm.dataSourceFallback

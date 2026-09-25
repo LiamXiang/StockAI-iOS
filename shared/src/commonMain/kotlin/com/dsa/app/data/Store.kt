@@ -140,6 +140,13 @@ class Store(private val settings: Settings = createSettings()) {
     fun getDataSource(): String = settings.getString(KEY_DATA_SOURCE, "tencent")
     fun setDataSource(s: String) = settings.putString(KEY_DATA_SOURCE, s)
 
+    fun getOcrProvider(): String = settings.getString(KEY_OCR_PROVIDER, "siliconflow")
+    fun setOcrProvider(p: String) = settings.putString(KEY_OCR_PROVIDER, p)
+    fun getOcrModel(): String = settings.getString(KEY_OCR_MODEL, "PaddlePaddle/PaddleOCR-VL-1.5")
+    fun setOcrModel(m: String) = settings.putString(KEY_OCR_MODEL, m)
+    fun getOcrExtractModel(): String = settings.getString(KEY_OCR_EXTRACT_MODEL, "THUDM/GLM-4-9B-0414")
+    fun setOcrExtractModel(m: String) = settings.putString(KEY_OCR_EXTRACT_MODEL, m)
+
     fun getAutoAnalysisEnabled(): Boolean = settings.getBoolean(KEY_AUTO_ANALYSIS, false)
     fun setAutoAnalysisEnabled(b: Boolean) = settings.putBoolean(KEY_AUTO_ANALYSIS, b)
 
@@ -221,6 +228,9 @@ class Store(private val settings: Settings = createSettings()) {
         private const val KEY_CUSTOM_URL = "custom_base_url"
         private const val KEY_THS_KEY = "ths_api_key"
         private const val KEY_DATA_SOURCE = "data_source"
+        private const val KEY_OCR_PROVIDER = "ocr_provider"
+        private const val KEY_OCR_MODEL = "ocr_model"
+        private const val KEY_OCR_EXTRACT_MODEL = "ocr_extract_model"
         private const val KEY_AUTO_ANALYSIS = "auto_analysis"
         private const val KEY_AI_REPORTS = "ai_reports"
         private const val KEY_PORTFOLIO_REPORTS = "portfolio_reports"

@@ -63,6 +63,22 @@ class SharedViewModel(
     var autoAnalysisEnabled by mutableStateOf(store.getAutoAnalysisEnabled())
         private set
 
+    // OCR 识别配置（识别股票截图用的服务商/模型）
+    var ocrProvider by mutableStateOf(store.getOcrProvider())
+        private set
+    var ocrModel by mutableStateOf(store.getOcrModel())
+        private set
+    var ocrExtractModel by mutableStateOf(store.getOcrExtractModel())
+        private set
+    fun setOcrConfig(provider: String, model: String, extractModel: String) {
+        store.setOcrProvider(provider)
+        store.setOcrModel(model)
+        store.setOcrExtractModel(extractModel)
+        ocrProvider = provider
+        ocrModel = model
+        ocrExtractModel = extractModel
+    }
+
     // ===== 报告历史 =====
     var analysisReports by mutableStateOf(store.getAnalysisReports())
         private set
@@ -393,6 +409,13 @@ class SharedViewModel(
     var aiLoading by mutableStateOf(false)
         private set
 
+    /** 切换股票时清空上一只股票的 AI 分析状态，避免串股 */
+    fun resetAiState() {
+        aiReport = null
+        aiError = null
+        aiLoading = false
+    }
+
     fun generateAiReport(code: String, userRequest: String = "") {
         val q = quotes[normalizeCode(code)]
         val name = q?.name ?: code
@@ -574,6 +597,10 @@ class SharedViewModel(
             try {
                 val hasHoldings = holdings.any { isCode(normalizeCode(it.code)) }
                 runPortfolioAnalysisAndSave(currentHoldingAccountId, watch = !hasHoldings)
+                if (portfolioReport != null) {
+                    val accountName = accounts.firstOrNull { it.id == currentHoldingAccountId }?.name ?: "我的持仓"
+                    com.dsa.app.data.notifyAnalysisDone("持仓组合分析完成", "${accountName}：${portfolioReport!!.take(60)}…")
+                }
             } catch (e: Exception) {
                 // 静默失败，不打扰用户
             }

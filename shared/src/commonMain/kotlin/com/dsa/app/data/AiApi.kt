@@ -267,15 +267,21 @@ object AiApi {
         val costPrice: Double = 0.0,
     )
 
-    /** OCR 识别图片文字（PaddleOCR-VL） */
-    suspend fun ocrImage(apiKeys: List<String>, base64Image: String): String =
+    /** OCR 识别图片文字（服务商/模型可在设置中配置） */
+    suspend fun ocrImage(
+        apiKeys: List<String>,
+        base64Image: String,
+        providerId: String = "siliconflow",
+        model: String = "PaddlePaddle/PaddleOCR-VL-1.5",
+        customBaseUrl: String = "",
+    ): String =
         withContext(Dispatchers.Default) {
             if (apiKeys.isEmpty()) throw AiException("请先在设置中填写 API Key")
             var lastError: Exception? = null
             for (key in apiKeys) {
                 if (key.isBlank()) continue
                 try {
-                    return@withContext ocrOnce(key, base64Image)
+                    return@withContext ocrOnce(key, base64Image, providerId, model, customBaseUrl)
                 } catch (e: Exception) {
                     lastError = e
                 }
@@ -283,10 +289,16 @@ object AiApi {
             throw lastError ?: AiException("OCR 识别失败")
         }
 
-    private suspend fun ocrOnce(apiKey: String, base64Image: String): String {
+    private suspend fun ocrOnce(
+        apiKey: String,
+        base64Image: String,
+        providerId: String,
+        model: String,
+        customBaseUrl: String,
+    ): String {
         val payload = """
             {
-              "model": "PaddlePaddle/PaddleOCR-VL-1.5",
+              "model": "$model",
               "messages": [
                 {"role": "user", "content": [
                   {"type": "text", "text": "请识别图片中所有文字，按行输出。特别注意6位数字的股票代码和股票名称。"},
@@ -296,7 +308,7 @@ object AiApi {
               "max_tokens": 4096
             }
         """.trimIndent()
-        val resp = client.post(getChatUrl("siliconflow")) {
+        val resp = client.post(getChatUrl(providerId, customBaseUrl)) {
             header("Authorization", "Bearer $apiKey")
             contentType(ContentType.Application.Json)
             setBody(payload)
@@ -310,10 +322,17 @@ object AiApi {
             ?: throw AiException("OCR 返回为空")
     }
 
-    /** 持仓截图 OCR：两步法 */
-    suspend fun ocrHoldingImage(apiKeys: List<String>, base64Image: String): String {
+    /** 持仓截图 OCR：两步法（第一步识别文字，第二步结构化提取持仓） */
+    suspend fun ocrHoldingImage(
+        apiKeys: List<String>,
+        base64Image: String,
+        providerId: String = "siliconflow",
+        model: String = "PaddlePaddle/PaddleOCR-VL-1.5",
+        extractModel: String = "THUDM/GLM-4-9B-0414",
+        customBaseUrl: String = "",
+    ): String {
         if (apiKeys.isEmpty()) throw AiException("请先在设置中填写 API Key")
-        val ocrText = ocrImage(apiKeys, base64Image)
+        val ocrText = ocrImage(apiKeys, base64Image, providerId, model, customBaseUrl)
         val prompt = """
             以下是股票持仓截图的OCR文字识别结果。请从中提取每只持仓股票的信息，只输出JSON数组，格式：[{"name":"股票名称","shares":持仓数量整数,"costPrice":成本价数字}]
             规则：
@@ -327,6 +346,6 @@ object AiApi {
             $ocrText
         """.trimIndent()
         val messages = listOf(ChatMessage(role = "user", content = prompt))
-        return chat(apiKeys, "THUDM/GLM-4-9B-0414", messages)
+        return chat(apiKeys, extractModel, messages, providerId, customBaseUrl)
     }
 }
