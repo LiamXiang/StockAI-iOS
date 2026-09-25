@@ -65,13 +65,9 @@ jobs:
           # 干净安装：先卸载旧版，清空上次数据
           xcrun simctl uninstall booted com.dsa.stockai 2>/dev/null || true
           xcrun simctl install booted iosApp/build/Debug-iphonesimulator/StockAI.app && echo "INSTALL_OK"
-          echo "=== 启动 App（console 模式，后台）==="
-          xcrun simctl launch --console-pty booted com.dsa.stockai > /tmp/app_out.txt 2>&1 &
-          CPID=$!
-          sleep 22
-          echo "=== App 控制台输出 ==="
-          cat /tmp/app_out.txt | tail -150
-          kill $CPID 2>/dev/null || true
+          echo "=== 启动 App（无 console，模拟器冷启动较慢）==="
+          xcrun simctl launch booted com.dsa.stockai && echo "LAUNCH_RETURNED"
+          sleep 30
           echo "=== 进程存活检查 ==="
           xcrun simctl spawn booted launchctl list | grep -i stockai && echo "APP_ALIVE" || echo "APP_CRASHED_OR_NOT_RUNNING"
           echo "=== 崩溃写盘文件 ==="
