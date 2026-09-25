@@ -363,6 +363,11 @@ class SharedViewModel(
         autoAnalysisEnabled = b
     }
 
+    // ===== 问股会话持久化（供 ChatScreen 使用）=====
+    fun getChatHistory(): List<ChatMessage> = store.getChatHistory()
+    fun saveChatHistory(messages: List<ChatMessage>) = store.saveChatHistory(messages)
+    fun clearChatHistory() = store.clearChatHistory()
+
     val currentApiKeys: List<String>
         get() {
             val p = aiProvider

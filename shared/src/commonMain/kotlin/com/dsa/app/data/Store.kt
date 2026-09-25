@@ -232,6 +232,20 @@ class Store(private val settings: Settings = createSettings()) {
     fun getLastAnalysisDate(): String = settings.getString(KEY_LAST_ANALYSIS_DATE, "")
     fun setLastAnalysisDate(date: String) = settings.putString(KEY_LAST_ANALYSIS_DATE, date)
 
+    // ===== 问股会话（重启保留最近对话）=====
+    fun getChatHistory(): List<ChatMessage> =
+        settings.getString(KEY_CHAT_HISTORY, "").let { raw ->
+            if (raw.isBlank()) emptyList() else runCatching { json.decodeFromString<List<ChatMessage>>(raw) }.getOrDefault(emptyList())
+        }
+
+    fun saveChatHistory(messages: List<ChatMessage>) {
+        // 只保留最近 40 条，避免存储膨胀
+        val trimmed = if (messages.size > 40) messages.takeLast(40) else messages
+        settings.putString(KEY_CHAT_HISTORY, json.encodeToString(trimmed))
+    }
+
+    fun clearChatHistory() = settings.remove(KEY_CHAT_HISTORY)
+
     companion object {
         private const val KEY_WATCHLIST = "watchlist"
         private const val KEY_ACCOUNTS = "accounts"
@@ -254,5 +268,6 @@ class Store(private val settings: Settings = createSettings()) {
         private const val KEY_SNAPSHOTS = "holding_snapshots"
         private const val KEY_CHANGE_REPORTS = "holding_change_reports"
         private const val KEY_LAST_ANALYSIS_DATE = "last_analysis_date"
+        private const val KEY_CHAT_HISTORY = "chat_history"
     }
 }

@@ -727,7 +727,7 @@ private fun PortfolioAnalysisDialog(
                             .height(400.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Text(r, fontSize = 13.sp, lineHeight = 20.sp)
+                        ReportText(r, baseSize = 13.sp)
                     }
                     if (savedFlag) {
                         Spacer(Modifier.height(4.dp))
@@ -817,7 +817,7 @@ private fun PortfolioHistoryDialog(
                             .height(400.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Text(r.content, fontSize = 13.sp, lineHeight = 20.sp)
+                        ReportText(r.content, baseSize = 13.sp)
                     }
                 }
             },
@@ -1340,7 +1340,7 @@ private fun HoldingChangeDialog(
                         vm.portfolioReport?.let {
                             Spacer(Modifier.height(6.dp))
                             Text("✓ 分析结果已自动保存到历史", color = DsaGreen, fontSize = 11.sp)
-                            Text(it, fontSize = 12.sp, lineHeight = 18.sp)
+                            ReportText(it, baseSize = 12.sp)
                         }
                     }
                 }
@@ -1402,7 +1402,7 @@ private fun HoldingChangeHistoryDialog(
                             .height(400.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Text(r.content, fontSize = 13.sp, lineHeight = 20.sp)
+                        ReportText(r.content, baseSize = 13.sp)
                     }
                 }
             },

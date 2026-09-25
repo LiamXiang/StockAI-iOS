@@ -86,6 +86,24 @@ fun DetailScreen(
         }
     }
 
+    // 行情自动刷新（每 30 秒刷新现价/涨跌，不打断 K 线加载）
+    LaunchedEffect(code, period, retryCount) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000)
+            try {
+                val useThs = vm.dataSource == "ths" && vm.thsApiKey.isNotBlank() && !vm.dataSourceFallback
+                val fresh = if (useThs) {
+                    try { com.dsa.app.data.ThsApi.fetchQuotes(listOf(code), vm.thsApiKey).firstOrNull() }
+                    catch (e: Exception) { null }
+                } else null
+                val q = fresh ?: MarketApi.fetchQuote(code)
+                if (q != null) quote = q
+            } catch (e: Exception) {
+                // 自动刷新失败静默忽略，保留上次行情
+            }
+        }
+    }
+
     Surface(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             // 顶部栏
@@ -244,7 +262,7 @@ fun DetailScreen(
                             vm.aiReport?.let {
                                 Spacer(Modifier.height(8.dp))
                                 if (savedFlag) Text("✓ 已保存到历史", color = DsaGreen, fontSize = 12.sp)
-                                Text(it, fontSize = 13.sp)
+                                ReportText(it, baseSize = 13.sp)
                                 Spacer(Modifier.height(8.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     TextButton(onClick = {
@@ -307,7 +325,7 @@ private fun AiReportHistoryDialog(
                             .height(400.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Text(r.content, fontSize = 13.sp, lineHeight = 20.sp)
+                        ReportText(r.content, baseSize = 13.sp)
                     }
                 }
             },

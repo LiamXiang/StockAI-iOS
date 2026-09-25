@@ -29,7 +29,8 @@ import kotlinx.coroutines.withContext
 fun ChatScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf("") }
-    var messages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
+    // 启动时恢复上次会话（重启不丢失）
+    var messages by remember { mutableStateOf(vm.getChatHistory()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showStockMenu by remember { mutableStateOf(false) }
@@ -73,6 +74,7 @@ fun ChatScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
         if (question.isBlank() || loading) return
         val userMsg = ChatMessage("user", question)
         messages = messages + userMsg
+        vm.saveChatHistory(messages)
         input = ""
         loading = true
         error = null
@@ -84,9 +86,11 @@ fun ChatScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
                     vm.aiProvider, vm.customBaseUrl,
                 )
                 messages = messages + ChatMessage("assistant", reply)
+                vm.saveChatHistory(messages)
             } catch (e: Exception) {
                 error = e.message
                 messages = messages + ChatMessage("assistant", "⚠️ ${e.message}")
+                vm.saveChatHistory(messages)
             } finally {
                 loading = false
             }
@@ -97,7 +101,10 @@ fun ChatScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 14.dp, top = 14.dp, end = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("问股", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = { messages = emptyList() }) { Text("清空") }
+            TextButton(onClick = {
+                messages = emptyList()
+                vm.clearChatHistory()
+            }) { Text("清空") }
         }
 
         // ===== 选择股票 =====
@@ -190,10 +197,9 @@ fun ChatScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
                         color = if (isUser) DsaBlue else MaterialTheme.colorScheme.surfaceVariant,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                     ) {
-                        Text(
+                        ReportText(
                             m.content,
-                            fontSize = 14.sp,
-                            color = if (isUser) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurface,
+                            baseSize = 14.sp,
                             modifier = Modifier.padding(10.dp),
                         )
                     }
