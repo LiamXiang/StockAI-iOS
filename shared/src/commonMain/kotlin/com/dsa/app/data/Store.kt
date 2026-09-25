@@ -163,6 +163,9 @@ class Store(private val settings: Settings = createSettings()) {
     fun setOcrModel(m: String) = settings.putString(KEY_OCR_MODEL, m)
     fun getOcrExtractModel(): String = settings.getString(KEY_OCR_EXTRACT_MODEL, "THUDM/GLM-4-9B-0414")
     fun setOcrExtractModel(m: String) = settings.putString(KEY_OCR_EXTRACT_MODEL, m)
+    // OCR 独立 API Key（加密存储；留空则回落使用主 API Key）
+    fun getOcrApiKey(): String = decryptKey(settings.getString(KEY_OCR_KEY, ""))
+    fun setOcrApiKey(key: String) = settings.putString(KEY_OCR_KEY, if (key.isBlank()) "" else "enc:" + Secrets.encrypt(key))
 
     fun getAutoAnalysisEnabled(): Boolean = settings.getBoolean(KEY_AUTO_ANALYSIS, false)
     fun setAutoAnalysisEnabled(b: Boolean) = settings.putBoolean(KEY_AUTO_ANALYSIS, b)
@@ -262,6 +265,7 @@ class Store(private val settings: Settings = createSettings()) {
         private const val KEY_OCR_PROVIDER = "ocr_provider"
         private const val KEY_OCR_MODEL = "ocr_model"
         private const val KEY_OCR_EXTRACT_MODEL = "ocr_extract_model"
+        private const val KEY_OCR_KEY = "ocr_api_key"
         private const val KEY_AUTO_ANALYSIS = "auto_analysis"
         private const val KEY_AI_REPORTS = "ai_reports"
         private const val KEY_PORTFOLIO_REPORTS = "portfolio_reports"

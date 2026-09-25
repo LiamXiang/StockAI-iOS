@@ -910,8 +910,8 @@ private fun OcrImportDialog(
         scope.launch {
             try {
                 val base64 = base64Encode(bytes)
-                val keys = listOf(vm.apiKey1, vm.apiKey2).filter { it.isNotBlank() }
-                // OCR 使用设置页配置的服务商/模型（默认硅基流动 PaddleOCR-VL）
+                // OCR 使用设置页独立配置的 OCR 服务商/密钥/模型（Key 留空时自动回落该服务商 Key/主 Key）
+                val keys = vm.currentOcrKeys
                 val ocrProvider = vm.ocrProvider
                 val ocrModel = vm.ocrModel
                 val ocrExtract = vm.ocrExtractModel

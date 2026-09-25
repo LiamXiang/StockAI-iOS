@@ -63,21 +63,34 @@ class SharedViewModel(
     var autoAnalysisEnabled by mutableStateOf(store.getAutoAnalysisEnabled())
         private set
 
-    // OCR 识别配置（识别股票截图用的服务商/模型）
+    // OCR 识别配置（识别股票截图用的服务商/密钥/模型，可完全独立于主分析配置）
     var ocrProvider by mutableStateOf(store.getOcrProvider())
         private set
     var ocrModel by mutableStateOf(store.getOcrModel())
         private set
     var ocrExtractModel by mutableStateOf(store.getOcrExtractModel())
         private set
-    fun setOcrConfig(provider: String, model: String, extractModel: String) {
+    var ocrApiKey by mutableStateOf(store.getOcrApiKey())
+        private set
+    fun setOcrConfig(provider: String, model: String, extractModel: String, apiKey: String) {
         store.setOcrProvider(provider)
         store.setOcrModel(model)
         store.setOcrExtractModel(extractModel)
+        store.setOcrApiKey(apiKey)
         ocrProvider = provider
         ocrModel = model
         ocrExtractModel = extractModel
+        ocrApiKey = apiKey
     }
+
+    /** OCR 实际使用的 Key：专用 OCR Key > 该服务商已配置 Key > 主 Key */
+    val currentOcrKeys: List<String>
+        get() {
+            if (ocrApiKey.isNotBlank()) return listOf(ocrApiKey)
+            val pk = providerKeys[ocrProvider]
+            if (pk != null && pk.isNotBlank()) return listOf(pk)
+            return listOf(apiKey1, apiKey2).filter { it.isNotBlank() }
+        }
 
     // ===== 报告历史 =====
     var analysisReports by mutableStateOf(store.getAnalysisReports())

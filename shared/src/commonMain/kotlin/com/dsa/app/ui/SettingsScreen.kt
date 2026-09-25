@@ -9,6 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dsa.app.data.AiApi
@@ -141,11 +143,13 @@ fun SettingsScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
         // ===== OCR 识别配置 =====
         Text("OCR 识别配置（截图导入股票）", fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(6.dp))
-        Text("用于「截图批量识别」功能：识别自选股代码、持仓股票名称/数量/成本价。使用当前主 API Key。", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+        Text("OCR 可完全独立配置：单独的服务商、API Key 和识别模型，与主分析互不影响。Key 留空则自动使用该服务商已配置的 Key（再留空用主 Key）。", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
         Spacer(Modifier.height(6.dp))
         var ocrProv by remember { mutableStateOf(vm.ocrProvider) }
         var ocrModelText by remember { mutableStateOf(vm.ocrModel) }
         var ocrExtractText by remember { mutableStateOf(vm.ocrExtractModel) }
+        var ocrKeyText by remember { mutableStateOf(vm.ocrApiKey) }
+        var showOcrKey by remember { mutableStateOf(false) }
         var showOcrProvMenu by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = AiApi.getProvider(ocrProv).name,
@@ -176,14 +180,27 @@ fun SettingsScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
             singleLine = true, modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value = ocrKeyText, onValueChange = { ocrKeyText = it },
+            label = { Text("OCR API Key（独立于主 Key，加密保存）") },
+            singleLine = true, modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (showOcrKey) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                TextButton(onClick = { showOcrKey = !showOcrKey }) {
+                    Text(if (showOcrKey) "隐藏" else "显示", fontSize = 11.sp)
+                }
+            },
+        )
+        Spacer(Modifier.height(6.dp))
         Button(
             onClick = {
-                vm.setOcrConfig(ocrProv, ocrModelText.trim().ifBlank { "PaddlePaddle/PaddleOCR-VL-1.5" }, ocrExtractText.trim().ifBlank { "THUDM/GLM-4-9B-0414" })
+                vm.setOcrConfig(ocrProv, ocrModelText.trim().ifBlank { "PaddlePaddle/PaddleOCR-VL-1.5" }, ocrExtractText.trim().ifBlank { "THUDM/GLM-4-9B-0414" }, ocrKeyText.trim())
                 showToast("OCR 配置已保存")
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("保存 OCR 配置") }
-        Text("支持视觉识别的服务商/模型示例：硅基流动 PaddlePaddle/PaddleOCR-VL-1.5、OpenAI gpt-4o、智谱 glm-4v 等", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+        Text("支持视觉识别的服务商/模型示例：硅基流动 PaddlePaddle/PaddleOCR-VL-1.5、OpenAI gpt-4o、智谱 glm-4v 等。", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+        Text(if (vm.ocrApiKey.isNotBlank()) "✓ 已配置独立 OCR Key（${AiApi.getProvider(ocrProv).name}）" else "未配置独立 OCR Key，将自动使用该服务商/主 Key", fontSize = 11.sp, color = if (vm.ocrApiKey.isNotBlank()) DsaGreen else MaterialTheme.colorScheme.outline)
 
         Spacer(Modifier.height(14.dp))
 
