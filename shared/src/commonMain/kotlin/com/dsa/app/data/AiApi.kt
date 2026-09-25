@@ -170,19 +170,6 @@ object AiApi {
             sb.append(Indicators.summarize(kline, ind))
             sb.append("均线状态: ${Indicators.maTrend(ind, kline.size - 1)}\n")
             sb.append("\n")
-            // 确定性技术信号（本地规则引擎，借鉴归类专家 matchByRule 思路）
-            val signals = com.dsa.app.analysis.SignalRules.analyze(ind, quote, kline)
-            if (signals.isNotEmpty()) {
-                sb.append("【确定性技术信号（本地规则引擎）】\n")
-                sb.append(com.dsa.app.analysis.SignalRules.summarize(signals))
-                sb.append("\n")
-            }
-            // 本地知识库增强（词频向量检索，借鉴归类专家 loadData+cosine 思路）
-            val kbQuery = (quote?.name ?: "") + " 技术分析 买卖 风险 仓位"
-            val kb = KnowledgeBase.retrieve(kbQuery, 3)
-            if (kb.isNotBlank()) {
-                sb.append(kb).append("\n")
-            }
             sb.append("【近12日K线】\n")
             kline.takeLast(12).forEach { k ->
                 sb.append(k.day + " 开" + Fmt.d(k.open) + " 高" + Fmt.d(k.high) + " 低" + Fmt.d(k.low) + " 收" + Fmt.d(k.close) + " 量" + Fmt.d(k.volume, 0) + "\n")
@@ -246,13 +233,7 @@ object AiApi {
             }
             sb.append("现价: " + Fmt.d(item.price) + "，涨跌: " + Fmt.s(item.changePct) + "%\n")
             if (item.summary.isNotBlank()) sb.append(item.summary).append("\n")
-            if (item.signalText.isNotBlank()) sb.append(item.signalText).append("\n")
             sb.append("\n")
-        }
-        // 本地知识库增强（组合层面检索仓位/风险/买卖决策规则）
-        val kb = KnowledgeBase.retrieve("组合 仓位 风险 止损 减仓 加仓", 3)
-        if (kb.isNotBlank()) {
-            sb.append(kb).append("\n")
         }
         sb.append("""
             |
@@ -275,7 +256,6 @@ object AiApi {
             |4. 如果某项数据不足，直接说明"数据不足"，不要猜测或编造
             |5. 直接给出分析结论，不要在报告末尾附加任何备注、说明或免责声明
             |6. 不保证收益，提示风险
-            |7. 【完整性要求】个股点评必须逐一覆盖上列的每一只股票（共 ${items.size} 只），每只都要给出明确操作建议（加仓/持有/减仓/清仓+理由），遗漏任何一只即为不合格
         """.trimMargin())
         return listOf(
             ChatMessage("system", "你是资深A股投资顾问，擅长组合分析与仓位管理。要求：观点明确、数据准确、风险意识强。禁止输出任何自我怀疑、数据验证、元注释或英文思考内容，直接给出专业分析结论。"),
@@ -292,7 +272,6 @@ object AiApi {
         val summary: String,
         val shares: Int = 0,
         val costPrice: Double = 0.0,
-        val signalText: String = "",
     )
 
     /** OCR 识别图片文字（服务商/模型可在设置中配置） */

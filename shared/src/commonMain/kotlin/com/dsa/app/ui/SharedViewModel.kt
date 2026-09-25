@@ -484,7 +484,6 @@ class SharedViewModel(
                     val kl = withContext(Dispatchers.Default) { MarketApi.fetchKline(c, "day", 320) }
                     val ind = com.dsa.app.analysis.Indicators.computeAll(kl)
                     val summary = com.dsa.app.analysis.Indicators.summarize(kl, ind)
-                    val signals = com.dsa.app.analysis.SignalRules.analyze(ind, q, kl)
                     items.add(AiApi.PortfolioItem(
                         code = c,
                         name = q?.name ?: h?.code ?: c,
@@ -493,7 +492,6 @@ class SharedViewModel(
                         summary = summary,
                         shares = h?.shares ?: 0,
                         costPrice = h?.costPrice ?: 0.0,
-                        signalText = com.dsa.app.analysis.SignalRules.summarize(signals),
                     ))
                 }
                 val messages = AiApi.buildPortfolioAnalysis(items, if (watch) "自选股组合" else "持仓组合（${acc.name}）")
