@@ -41,8 +41,9 @@ fun App(vm: SharedViewModel) {
     var tab by remember { mutableStateOf(Tab.WATCH) }
     var detailCode by remember { mutableStateOf<String?>(null) }
 
-    // 启动时检查定时自动分析（每个交易日首次打开自动生成组合报告）
+    // 启动后延迟执行定时自动分析（避开首帧渲染高峰，内部已 try-catch）
     LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2000)
         vm.checkAndRunAutoAnalysis()
     }
 
