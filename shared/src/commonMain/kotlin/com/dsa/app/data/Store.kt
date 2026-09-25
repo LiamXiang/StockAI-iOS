@@ -104,12 +104,15 @@ class Store(private val settings: Settings = createSettings()) {
 
     // ===== AI 配置 =====
     fun getApiKeys(): Pair<String, String> =
-        settings.getString(KEY_KEY1, "") to settings.getString(KEY_KEY2, "")
+        decryptKey(settings.getString(KEY_KEY1, "")) to decryptKey(settings.getString(KEY_KEY2, ""))
 
     fun setApiKeys(k1: String, k2: String) {
-        settings.putString(KEY_KEY1, k1)
-        settings.putString(KEY_KEY2, k2)
+        settings.putString(KEY_KEY1, Secrets.encrypt(k1))
+        settings.putString(KEY_KEY2, Secrets.encrypt(k2))
     }
+
+    private fun decryptKey(raw: String): String =
+        if (raw.startsWith("enc:")) Secrets.decrypt(raw.removePrefix("enc:")) else raw
 
     fun getModel(): String = settings.getString(KEY_MODEL, "THUDM/GLM-4-9B-0414")
     fun setModel(m: String) = settings.putString(KEY_MODEL, m)
@@ -120,14 +123,28 @@ class Store(private val settings: Settings = createSettings()) {
     fun getAiProvider(): String = settings.getString(KEY_AI_PROVIDER, "siliconflow")
     fun setAiProvider(p: String) = settings.putString(KEY_AI_PROVIDER, p)
 
-    fun getProviderKeys(): Map<String, String> =
-        settings.getString(KEY_PROVIDER_KEYS, "").let { raw ->
+    fun getProviderKeys(): Map<String, String> {
+        val stored = settings.getString(KEY_PROVIDER_KEYS, "").let { raw ->
             if (raw.isBlank()) emptyMap() else runCatching { json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
         }
+        // 合并内置默认密钥（用户未覆盖的自动可用）；内置密钥以密文内置、运行时解密
+        val merged = Secrets.builtinKeys.toMutableMap()
+        stored.forEach { (p, enc) ->
+            if (enc.startsWith("enc:")) {
+                val dec = Secrets.decrypt(enc.removePrefix("enc:"))
+                if (dec.isNotBlank()) merged[p] = dec
+            } else if (enc.isNotBlank()) {
+                merged[p] = enc
+            }
+        }
+        return merged
+    }
 
     fun setProviderKey(provider: String, key: String) {
-        val map = getProviderKeys().toMutableMap()
-        if (key.isBlank()) map.remove(provider) else map[provider] = key
+        val map = settings.getString(KEY_PROVIDER_KEYS, "").let { raw ->
+            if (raw.isBlank()) emptyMap() else runCatching { json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+        }.toMutableMap()
+        if (key.isBlank()) map.remove(provider) else map[provider] = "enc:" + Secrets.encrypt(key)
         settings.putString(KEY_PROVIDER_KEYS, json.encodeToString(map))
     }
 

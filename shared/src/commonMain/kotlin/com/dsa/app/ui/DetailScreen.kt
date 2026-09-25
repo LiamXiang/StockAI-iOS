@@ -203,6 +203,55 @@ fun DetailScreen(
                         IndicatorSummary(kline, indicator)
                     }
 
+                    // 确定性技术信号（本地规则引擎，先于 AI 给出可解释信号）
+                    if (kline.isNotEmpty()) {
+                        val signals = remember(quote, indicator, kline) {
+                            com.dsa.app.analysis.SignalRules.analyze(indicator, quote, kline)
+                        }
+                        if (signals.isNotEmpty()) {
+                            Card(
+                                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            ) {
+                                Column(Modifier.padding(10.dp)) {
+                                    Text("技术信号（本地规则引擎）", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    val bullish = signals.count { it.level == com.dsa.app.analysis.SignalRules.Level.BULLISH }
+                                    val bearish = signals.count { it.level == com.dsa.app.analysis.SignalRules.Level.BEARISH }
+                                    Text(
+                                        "共 ${signals.size} 条 · 看多 $bullish · 看空 $bearish",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.outline,
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    signals.forEach { s ->
+                                        Row(verticalAlignment = Alignment.Top) {
+                                            Text(
+                                                when (s.level) {
+                                                    com.dsa.app.analysis.SignalRules.Level.BULLISH -> "▲"
+                                                    com.dsa.app.analysis.SignalRules.Level.BEARISH -> "▼"
+                                                    else -> "·"
+                                                },
+                                                fontSize = 12.sp,
+                                                color = when (s.level) {
+                                                    com.dsa.app.analysis.SignalRules.Level.BULLISH -> DsaRed
+                                                    com.dsa.app.analysis.SignalRules.Level.BEARISH -> DsaGreen
+                                                    else -> MaterialTheme.colorScheme.outline
+                                                },
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                "[${s.name}] ${s.text}",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                        Spacer(Modifier.height(2.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // AI 分析
                     Card(
                         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
