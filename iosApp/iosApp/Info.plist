@@ -37,5 +37,7 @@
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>用于从相册选择股票截图，批量识别持仓股与自选股</string>
 </dict>
 </plist>

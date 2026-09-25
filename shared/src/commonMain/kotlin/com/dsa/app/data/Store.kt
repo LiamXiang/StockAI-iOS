@@ -150,8 +150,16 @@ class Store(private val settings: Settings = createSettings()) {
         }
 
     fun saveAnalysisReport(report: AnalysisReport) {
-        val list = (getAnalysisReports() + report).takeLast(100)
+        val list = (getAnalysisReports().filterNot { it.id == report.id } + report).takeLast(100)
         settings.putString(KEY_AI_REPORTS, json.encodeToString(list))
+    }
+
+    fun deleteAnalysisReport(id: Long) {
+        settings.putString(KEY_AI_REPORTS, json.encodeToString(getAnalysisReports().filterNot { it.id == id }))
+    }
+
+    fun clearAnalysisReports() {
+        settings.putString(KEY_AI_REPORTS, json.encodeToString(emptyList<AnalysisReport>()))
     }
 
     fun getPortfolioReports(): List<PortfolioReport> =
@@ -160,8 +168,12 @@ class Store(private val settings: Settings = createSettings()) {
         }
 
     fun savePortfolioReport(report: PortfolioReport) {
-        val list = (getPortfolioReports() + report).takeLast(100)
+        val list = (getPortfolioReports().filterNot { it.id == report.id } + report).takeLast(100)
         settings.putString(KEY_PORTFOLIO_REPORTS, json.encodeToString(list))
+    }
+
+    fun deletePortfolioReport(id: Long) {
+        settings.putString(KEY_PORTFOLIO_REPORTS, json.encodeToString(getPortfolioReports().filterNot { it.id == id }))
     }
 
     fun getHoldingSnapshots(): List<HoldingSnapshot> =
@@ -170,8 +182,12 @@ class Store(private val settings: Settings = createSettings()) {
         }
 
     fun saveHoldingSnapshot(snapshot: HoldingSnapshot) {
-        val list = (getHoldingSnapshots() + snapshot).takeLast(100)
+        val list = (getHoldingSnapshots().filterNot { it.id == snapshot.id } + snapshot).takeLast(100)
         settings.putString(KEY_SNAPSHOTS, json.encodeToString(list))
+    }
+
+    fun deleteHoldingSnapshot(id: Long) {
+        settings.putString(KEY_SNAPSHOTS, json.encodeToString(getHoldingSnapshots().filterNot { it.id == id }))
     }
 
     fun getHoldingChangeReports(): List<HoldingChangeReport> =
@@ -180,9 +196,17 @@ class Store(private val settings: Settings = createSettings()) {
         }
 
     fun saveHoldingChangeReport(report: HoldingChangeReport) {
-        val list = (getHoldingChangeReports() + report).takeLast(100)
+        val list = (getHoldingChangeReports().filterNot { it.id == report.id } + report).takeLast(100)
         settings.putString(KEY_CHANGE_REPORTS, json.encodeToString(list))
     }
+
+    fun deleteHoldingChangeReport(id: Long) {
+        settings.putString(KEY_CHANGE_REPORTS, json.encodeToString(getHoldingChangeReports().filterNot { it.id == id }))
+    }
+
+    // ===== 定时自动分析日期 =====
+    fun getLastAnalysisDate(): String = settings.getString(KEY_LAST_ANALYSIS_DATE, "")
+    fun setLastAnalysisDate(date: String) = settings.putString(KEY_LAST_ANALYSIS_DATE, date)
 
     companion object {
         private const val KEY_WATCHLIST = "watchlist"
@@ -202,5 +226,6 @@ class Store(private val settings: Settings = createSettings()) {
         private const val KEY_PORTFOLIO_REPORTS = "portfolio_reports"
         private const val KEY_SNAPSHOTS = "holding_snapshots"
         private const val KEY_CHANGE_REPORTS = "holding_change_reports"
+        private const val KEY_LAST_ANALYSIS_DATE = "last_analysis_date"
     }
 }

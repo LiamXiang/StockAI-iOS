@@ -9,6 +9,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,10 +41,21 @@ fun App(vm: SharedViewModel) {
     var tab by remember { mutableStateOf(Tab.WATCH) }
     var detailCode by remember { mutableStateOf<String?>(null) }
 
+    // 启动时检查定时自动分析（每个交易日首次打开自动生成组合报告）
+    LaunchedEffect(Unit) {
+        vm.checkAndRunAutoAnalysis()
+    }
+
     val currentTab = tab
     val detail = detailCode
 
-    DsaTheme(darkTheme = vm.theme == "dark") {
+    val darkTheme = when (vm.theme) {
+        "dark" -> true
+        "light" -> false
+        else -> androidx.compose.foundation.isSystemInDarkTheme()
+    }
+
+    DsaTheme(darkTheme = darkTheme) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {

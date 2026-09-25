@@ -1,6 +1,7 @@
 package com.dsa.app.ui
 
 import com.dsa.app.util.Fmt
+import com.dsa.app.util.nowMs
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -349,8 +350,9 @@ class SharedViewModel(
     val currentApiKeys: List<String>
         get() {
             val p = aiProvider
-            if (p == "siliconflow") return listOf(apiKey1, apiKey2)
-            return listOf(providerKeys[p] ?: "")
+            if (p == "siliconflow") return listOf(apiKey1, apiKey2).filter { it.isNotBlank() }
+            val key = providerKeys[p] ?: ""
+            return if (key.isNotBlank()) listOf(key) else emptyList()
         }
 
     // ===== 模型拉取 =====
@@ -415,6 +417,16 @@ class SharedViewModel(
         }
     }
 
+    fun deleteReport(id: Long) {
+        store.deleteAnalysisReport(id)
+        analysisReports = store.getAnalysisReports()
+    }
+
+    fun clearReports() {
+        store.clearAnalysisReports()
+        analysisReports = store.getAnalysisReports()
+    }
+
     // ===== 组合分析 =====
     var portfolioReport by mutableStateOf<String?>(null)
     var portfolioError by mutableStateOf<String?>(null)
@@ -422,7 +434,7 @@ class SharedViewModel(
     var portfolioLoading by mutableStateOf(false)
         private set
 
-    fun runPortfolioAnalysisAndSave(accountId: String = currentHoldingAccountId) {
+    fun runPortfolioAnalysisAndSave(accountId: String = currentHoldingAccountId, watch: Boolean = false) {
         portfolioLoading = true
         portfolioError = null
         portfolioReport = null
@@ -430,9 +442,17 @@ class SharedViewModel(
             try {
                 val acc = accounts.firstOrNull { it.id == accountId } ?: store.getCurrentAccount()
                 val items = mutableListOf<AiApi.PortfolioItem>()
-                val codes = acc.holdings.map { normalizeCode(it.code) }.filter { isCode(it) }
+                val codes: List<String>
+                val accountName: String
+                if (watch) {
+                    codes = watchlist.map { normalizeCode(it) }.filter { isCode(it) }
+                    accountName = "自选股"
+                } else {
+                    codes = acc.holdings.map { normalizeCode(it.code) }.filter { isCode(it) }
+                    accountName = acc.name
+                }
                 if (codes.isEmpty()) {
-                    portfolioError = "该账号暂无持仓"
+                    portfolioError = if (watch) "自选股为空" else "该账号暂无持仓"
                     return@launch
                 }
                 for (c in codes) {
@@ -451,13 +471,14 @@ class SharedViewModel(
                         costPrice = h?.costPrice ?: 0.0,
                     ))
                 }
-                val messages = AiApi.buildPortfolioAnalysis(items, "持仓组合（${acc.name}）")
+                val messages = AiApi.buildPortfolioAnalysis(items, if (watch) "自选股组合" else "持仓组合（${acc.name}）")
                 val content = AiApi.chat(currentApiKeys, model, messages, aiProvider, customBaseUrl)
                 portfolioReport = content
                 store.savePortfolioReport(PortfolioReport(
                     content = content, model = model, stockCount = items.size,
                     totalValue = items.sumOf { it.price * it.shares },
-                    accountId = acc.id, accountName = acc.name,
+                    accountId = if (watch) "watchlist" else acc.id,
+                    accountName = accountName,
                 ))
                 portfolioReports = store.getPortfolioReports()
             } catch (e: Exception) {
@@ -466,6 +487,11 @@ class SharedViewModel(
                 portfolioLoading = false
             }
         }
+    }
+
+    fun deletePortfolioReport(id: Long) {
+        store.deletePortfolioReport(id)
+        portfolioReports = store.getPortfolioReports()
     }
 
     // ===== 持仓变化分析 =====
@@ -523,6 +549,33 @@ class SharedViewModel(
                 portfolioError = e.message ?: "变化分析失败"
             } finally {
                 portfolioLoading = false
+            }
+        }
+    }
+
+    fun deleteHoldingChangeReport(id: Long) {
+        store.deleteHoldingChangeReport(id)
+        holdingChangeReports = store.getHoldingChangeReports()
+    }
+
+    fun deleteHoldingSnapshot(id: Long) {
+        store.deleteHoldingSnapshot(id)
+        holdingSnapshots = store.getHoldingSnapshots()
+    }
+
+    // ===== 定时自动分析 =====
+    /** 每个交易日首次打开 App 时调用：若开启且今天未分析，自动生成持仓/自选组合报告 */
+    fun checkAndRunAutoAnalysis() {
+        if (!autoAnalysisEnabled) return
+        val today = Fmt.date(nowMs())
+        if (store.getLastAnalysisDate() == today) return
+        store.setLastAnalysisDate(today)
+        scope.launch {
+            try {
+                val hasHoldings = holdings.any { isCode(normalizeCode(it.code)) }
+                runPortfolioAnalysisAndSave(currentHoldingAccountId, watch = !hasHoldings)
+            } catch (e: Exception) {
+                // 静默失败，不打扰用户
             }
         }
     }

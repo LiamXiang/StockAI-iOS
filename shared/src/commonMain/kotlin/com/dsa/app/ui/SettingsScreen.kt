@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dsa.app.data.AiApi
+import com.dsa.app.data.showToast
 import com.dsa.app.ui.theme.DsaGreen
 import com.dsa.app.ui.theme.DsaRed
 import kotlinx.coroutines.launch
@@ -154,13 +155,47 @@ fun SettingsScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.height(6.dp))
         var thsKey by remember { mutableStateOf(vm.thsApiKey) }
+        var thsTesting by remember { mutableStateOf(false) }
+        var thsTestResult by remember { mutableStateOf<String?>(null) }
         OutlinedTextField(
             value = thsKey, onValueChange = { thsKey = it },
             label = { Text("同花顺 API Key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(6.dp))
-        Button(onClick = { vm.saveThsApiKey(thsKey.trim()) }, modifier = Modifier.fillMaxWidth()) { Text("保存同花顺 Key") }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    vm.saveThsApiKey(thsKey.trim())
+                    showToast("已保存")
+                },
+                modifier = Modifier.weight(1f),
+            ) { Text("保存 Key") }
+            Button(
+                onClick = {
+                    thsTesting = true
+                    thsTestResult = null
+                    scope.launch {
+                        thsTestResult = try {
+                            val q = com.dsa.app.data.ThsApi.fetchQuotes(listOf("600519"), thsKey.trim())
+                            if (q.isEmpty()) "✗ 连接失败：无返回数据" else "✓ 连接成功！测试: ${q.first().name} ${q.first().price}"
+                        } catch (e: Exception) {
+                            "✗ 连接失败: ${e.message}"
+                        }
+                        thsTesting = false
+                    }
+                },
+                enabled = !thsTesting && thsKey.isNotBlank(),
+                modifier = Modifier.weight(1f),
+            ) { Text(if (thsTesting) "测试中…" else "测试连接") }
+        }
+        thsTestResult?.let { Text(it, fontSize = 12.sp, color = if (it.startsWith("✓")) DsaGreen else DsaRed) }
         Text("同花顺失败会自动降级到腾讯数据源", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+        Card(Modifier.fillMaxWidth().padding(top = 6.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+            Column(Modifier.padding(10.dp)) {
+                Text("数据源说明", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text("• 腾讯：默认，免费、快，行情字段较全\n• 同花顺：专业金融数据（行情/K线/资金流/财务），需同花顺 API Key\n• 使用同花顺数据时，搜索、K线、行情均走同花顺接口，失败自动降级", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
 
         Spacer(Modifier.height(14.dp))
 
@@ -180,15 +215,35 @@ fun SettingsScreen(vm: SharedViewModel, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             FilterChip(
-                selected = vm.theme == "dark",
-                onClick = { vm.saveTheme("dark") },
-                label = { Text("深色", fontSize = 12.sp) },
+                selected = vm.theme == "system",
+                onClick = { vm.saveTheme("system") },
+                label = { Text("跟随系统", fontSize = 12.sp) },
             )
             FilterChip(
                 selected = vm.theme == "light",
                 onClick = { vm.saveTheme("light") },
                 label = { Text("浅色", fontSize = 12.sp) },
             )
+            FilterChip(
+                selected = vm.theme == "dark",
+                onClick = { vm.saveTheme("dark") },
+                label = { Text("深色", fontSize = 12.sp) },
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // ===== 关于 / 免责 =====
+        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+            Column(Modifier.padding(12.dp)) {
+                Text("关于", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("股票智能分析助手 v1.0\n基于 Compose Multiplatform 跨平台构建", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                Text("免责声明", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("本应用所有 AI 分析与选股结果仅供参考，不构成任何投资建议。股市有风险，投资需谨慎。数据可能存在延迟或误差，请以交易所官方数据为准。", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
 
         Spacer(Modifier.height(30.dp))
