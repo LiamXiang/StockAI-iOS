@@ -4,34 +4,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.memcpy
 import kotlinx.cinterop.usePinned
 import platform.Foundation.NSData
-import platform.Foundation.NSLog
-import platform.UIKit.CGSizeMake
-import platform.UIKit.CGRectMake
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
-import platform.UIKit.UIGraphicsBeginImageContextWithOptions
-import platform.UIKit.UIGraphicsEndImageContext
-import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import platform.UIKit.UIImagePickerController
 import platform.UIKit.UIImagePickerControllerDelegateProtocol
 import platform.UIKit.UIImagePickerControllerOriginalImage
 import platform.UIKit.UIImagePickerControllerSourceType
-import platform.UIKit.UIImagePickerControllerSourceTypePhotoLibrary
 import platform.UIKit.UINavigationControllerDelegateProtocol
-import platform.UIKit.UIViewController
 import platform.darwin.NSObject
+import platform.posix.memcpy
 
 @Composable
 actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
     return remember {
         {
             val picker = UIImagePickerController().apply {
-                sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
+                sourceType = UIImagePickerControllerSourceType.PhotoLibrary
                 delegate = object : NSObject(),
                     UIImagePickerControllerDelegateProtocol,
                     UINavigationControllerDelegateProtocol {
@@ -65,26 +57,17 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
+/** JPEG 0.6 质量压缩（保持原尺寸，供 OCR 使用） */
 private fun compressUIImage(image: UIImage): ByteArray? {
-    // 缩放到最大边 1024px
-    val maxDim = maxOf(image.size.width, image.size.height)
-    val scale = if (maxDim > 1024.0) 1024.0 / maxDim else 1.0
-    val newW = image.size.width * scale
-    val newH = image.size.height * scale
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(newW, newH), false, 1.0)
-    image.drawInRect(CGRectMake(0.0, 0.0, newW, newH))
-    val scaled = UIGraphicsGetImageFromCurrentImageContext()
-    UIGraphicsEndImageContext()
-    val data: NSData? = scaled?.let { UIImageJPEGRepresentation(it, 0.8) }
+    val data: NSData? = UIImageJPEGRepresentation(image, 0.6)
     return data?.toByteArray()
 }
 
 @OptIn(ExperimentalForeignApi::class)
 private fun NSData.toByteArray(): ByteArray {
-    val len = length.toInt()
-    val out = ByteArray(len)
-    if (len > 0) {
+    val size = length.toInt()
+    val out = ByteArray(size)
+    if (size > 0) {
         out.usePinned { pinned ->
             memcpy(pinned.addressOf(0), bytes, length)
         }
