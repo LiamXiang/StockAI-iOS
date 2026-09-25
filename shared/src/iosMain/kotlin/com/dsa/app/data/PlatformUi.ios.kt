@@ -23,7 +23,7 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
     return remember {
         {
             val picker = UIImagePickerController().apply {
-                sourceType = UIImagePickerControllerSourceType.PhotoLibrary
+                sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
                 delegate = object : NSObject(),
                     UIImagePickerControllerDelegateProtocol,
                     UINavigationControllerDelegateProtocol {
